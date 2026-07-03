@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { deleteUser, updateUserApproval } from "@/features/dashboard/actions";
 import { clearAuthUser, clearServerSession, getAuthUser } from "@/lib/auth/client";
 import type { CurrentUser, TeamMember, User } from "@/features/dashboard/types";
+import { useAdminTeamMembers } from "./use-admin-team-members";
 
 export function useDashboardShell(
   initialTeamMembers: TeamMember[],
@@ -10,7 +11,6 @@ export function useDashboardShell(
 ) {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [teamMembers, setTeamMembers] = useState(initialTeamMembers);
   const [pendingApprovalIds, setPendingApprovalIds] = useState<Set<number>>(
     () => new Set()
   );
@@ -18,6 +18,13 @@ export function useDashboardShell(
     () => new Set()
   );
   const router = useRouter();
+
+  const pendingMutation = pendingApprovalIds.size > 0 || pendingDeleteIds.size > 0;
+
+  const { teamMembers, setTeamMembers, refetchTeamMembers } = useAdminTeamMembers(
+    initialTeamMembers,
+    pendingMutation
+  );
 
   useEffect(() => {
     const storedUser = getAuthUser();
@@ -31,7 +38,6 @@ export function useDashboardShell(
   }, [router]);
 
   useEffect(() => {
-    setTeamMembers(initialTeamMembers);
     setPendingApprovalIds((current) => (current.size === 0 ? current : new Set()));
     setPendingDeleteIds((current) => (current.size === 0 ? current : new Set()));
   }, [initialTeamMembers, users]);
@@ -76,6 +82,8 @@ export function useDashboardShell(
           return;
         }
 
+        await refetchTeamMembers();
+        clearPending();
         router.refresh();
       } catch (err) {
         setTeamMembers((members) =>
@@ -87,7 +95,7 @@ export function useDashboardShell(
         console.error("Failed to update approval", err);
       }
     },
-    [pendingApprovalIds, router]
+    [pendingApprovalIds, refetchTeamMembers, router, setTeamMembers]
   );
 
   const removeUser = useCallback(
@@ -117,13 +125,15 @@ export function useDashboardShell(
         }
 
         setTeamMembers((members) => members.filter((member) => member.id !== id));
+        await refetchTeamMembers();
+        clearPending();
         router.refresh();
       } catch (err) {
         clearPending();
         console.error("Failed to delete user", err);
       }
     },
-    [pendingDeleteIds, router]
+    [pendingDeleteIds, refetchTeamMembers, router, setTeamMembers]
   );
 
   const handleLogout = useCallback(async () => {

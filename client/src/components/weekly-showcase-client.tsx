@@ -1,31 +1,36 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { WeeklyWeekPagination } from "@/components/dashboard/weekly-week-pagination";
 import { useDashboardShell } from "@/components/dashboard/use-dashboard-shell";
 import { WeeklyCellDialog } from "@/components/dashboard/weekly-cell-dialog";
+import { WeeklyColumnHeaderCell } from "@/components/dashboard/weekly-column-header-cell";
+import { WeeklyColumnHeaderDialog } from "@/components/dashboard/weekly-column-header-dialog";
 import { WeeklyTaskDetailCell } from "@/components/dashboard/weekly-task-detail-cell";
 import {
   extractWeekdayLabelForDate,
   formatWeekdayDateCellText,
   matchStoredUserNamesToIds,
+  normalizeWeekdayDateCellRaw,
   parseWeekdayDateCellText,
   userIdsToLastNames,
 } from "@/components/dashboard/weekly-weekday-picker";
 import { Button } from "@/components/ui/button";
 import { isRichTextEmpty } from "@/lib/rich-text";
-import { upsertWeeklyTaskDetail } from "@/features/dashboard/actions";
+import { upsertWeeklyShowcaseColumnHeader, upsertWeeklyTaskDetail } from "@/features/dashboard/actions";
 import {
   maxRowSuffixForWeek,
   weeklyRowHasAnyData,
 } from "@/features/dashboard/weekly-row-utils";
 import { createBlankWeeklyRow } from "@/features/dashboard/weekly-showcase-rows";
 import {
-  WEEKLY_SHOWCASE_COLUMNS,
+  buildWeeklyShowcaseColumns,
+  DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS,
+  type WeeklyShowcaseColumnHeader,
   type WeeklyShowcaseColumnKey,
   type WeeklyShowcaseRow,
 } from "@/features/dashboard/weekly-showcase-types";
@@ -38,7 +43,10 @@ export type WeeklyShowcaseClientProps = {
   initialTeamMembers: TeamMember[];
   users: User[];
   initialRows: WeeklyShowcaseRow[];
+  initialColumnHeaders?: WeeklyShowcaseColumnHeader[];
 };
+
+type HeaderEditTarget = WeeklyShowcaseColumnHeader;
 
 type CellEditTarget = {
   weekNumber: number;
@@ -54,8 +62,21 @@ export default function WeeklyShowcaseClient({
   initialTeamMembers,
   users,
   initialRows,
+  initialColumnHeaders = DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS,
 }: WeeklyShowcaseClientProps) {
   const [cellDialogOpen, setCellDialogOpen] = useState(false);
+  const [headerDialogOpen, setHeaderDialogOpen] = useState(false);
+  const [headerTarget, setHeaderTarget] = useState<HeaderEditTarget | null>(null);
+  const [headerLabel, setHeaderLabel] = useState("");
+  const [headerError, setHeaderError] = useState<string | null>(null);
+  const [isSavingHeader, setIsSavingHeader] = useState(false);
+  const [activeHeaderKey, setActiveHeaderKey] = useState<WeeklyShowcaseColumnKey | null>(
+    null
+  );
+  const weeklyTableRef = useRef<HTMLDivElement>(null);
+  const [columnHeaders, setColumnHeaders] =
+    useState<WeeklyShowcaseColumnHeader[]>(initialColumnHeaders);
+  const columns = buildWeeklyShowcaseColumns(columnHeaders);
   const [cellTarget, setCellTarget] = useState<CellEditTarget | null>(null);
   const [cellText, setCellText] = useState("");
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
@@ -78,6 +99,24 @@ export default function WeeklyShowcaseClient({
       return [...incoming, ...localExtras];
     });
   }, [initialRows, year, weekNumber]);
+
+  useEffect(() => {
+    setColumnHeaders(initialColumnHeaders);
+  }, [initialColumnHeaders]);
+
+  useEffect(() => {
+    if (!activeHeaderKey) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (!weeklyTableRef.current?.contains(target)) {
+        setActiveHeaderKey(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [activeHeaderKey]);
 
   const {
     user,
@@ -111,7 +150,7 @@ export default function WeeklyShowcaseClient({
       setCellTarget(target);
       if (target.column === "weekdayDate") {
         const raw = detail.text === "—" ? "" : detail.text;
-        const parsed = parseWeekdayDateCellText(raw);
+        const parsed = parseWeekdayDateCellText(normalizeWeekdayDateCellRaw(raw));
         setCellText(parsed.weekday);
         setSelectedUserIds(matchStoredUserNamesToIds(parsed.userNames, users));
       } else {
@@ -122,6 +161,66 @@ export default function WeeklyShowcaseClient({
       setCellDialogOpen(true);
     },
     [users]
+  );
+
+  const openHeaderDialog = useCallback((header: HeaderEditTarget) => {
+    setHeaderTarget(header);
+    setHeaderLabel(header.label);
+    setHeaderError(null);
+    setActiveHeaderKey(null);
+    setHeaderDialogOpen(true);
+  }, []);
+
+  const toggleHeaderActive = useCallback((columnKey: WeeklyShowcaseColumnKey) => {
+    setActiveHeaderKey((prev) => (prev === columnKey ? null : columnKey));
+  }, []);
+
+  const handleHeaderDialogOpenChange = useCallback((open: boolean) => {
+    setHeaderDialogOpen(open);
+    if (!open) {
+      setHeaderTarget(null);
+      setHeaderError(null);
+      setIsSavingHeader(false);
+    }
+  }, []);
+
+  const handleHeaderSubmit = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (!headerTarget) return;
+
+      const label = headerLabel.trim();
+      if (!label) {
+        setHeaderError("Please enter a header label.");
+        return;
+      }
+
+      setIsSavingHeader(true);
+      setHeaderError(null);
+
+      const result = await upsertWeeklyShowcaseColumnHeader({
+        columnKey: headerTarget.columnKey,
+        label,
+        headerStyle: "default",
+      });
+
+      setIsSavingHeader(false);
+
+      if (!result.ok) {
+        setHeaderError(result.error);
+        return;
+      }
+
+      setColumnHeaders((prev) =>
+        prev.map((header) =>
+          header.columnKey === result.header.columnKey ? result.header : header
+        )
+      );
+      setHeaderDialogOpen(false);
+      setHeaderTarget(null);
+      router.refresh();
+    },
+    [headerTarget, headerLabel, router]
   );
 
   const handleCellDialogOpenChange = useCallback((open: boolean) => {
@@ -203,13 +302,13 @@ export default function WeeklyShowcaseClient({
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-neutral-950 text-white">
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
         Loading...
       </div>
     );
   }
 
-  const colCount = WEEKLY_SHOWCASE_COLUMNS.length;
+  const colCount = columns.length;
 
   return (
     <DashboardShell
@@ -242,28 +341,42 @@ export default function WeeklyShowcaseClient({
                 ? "Add another row for this week"
                 : "Enter data in the last row before adding another"
             }
-            className="border-neutral-700 bg-neutral-900 text-neutral-200 hover:bg-neutral-800 disabled:opacity-50"
+            className="disabled:opacity-50"
           >
             <Plus className="mr-1.5 size-4" aria-hidden />
             Add row
           </Button>
           {!canAddRow && rows.length > 0 ? (
-            <span className="text-xs text-neutral-500">
+            <span className="text-xs text-muted-foreground">
               Fill at least one cell in the bottom row to add another.
             </span>
           ) : null}
         </div>
       ) : null}
 
-        <div className="overflow-hidden border border-neutral-800 bg-neutral-900 shadow-2xl backdrop-blur-sm">
+        <div
+          ref={weeklyTableRef}
+          className="overflow-hidden border border-border bg-card shadow-sm"
+        >
           <div className="overflow-x-auto">
             <table className="w-full min-w-[88rem] border-separate border-spacing-0 text-sm">
               <thead>
                 <tr>
-                  {WEEKLY_SHOWCASE_COLUMNS.map((col) => (
-                    <th key={col.key} className={col.thClass}>
-                      {col.label}
-                    </th>
+                  {columns.map((col) => (
+                    <WeeklyColumnHeaderCell
+                      key={col.key}
+                      column={col}
+                      canEdit={canManageWeeklyRows}
+                      isActive={activeHeaderKey === col.key}
+                      onActivate={() => toggleHeaderActive(col.key)}
+                      onEdit={() =>
+                        openHeaderDialog({
+                          columnKey: col.key,
+                          label: col.label,
+                          headerStyle: col.headerStyle,
+                        })
+                      }
+                    />
                   ))}
                 </tr>
               </thead>
@@ -272,7 +385,7 @@ export default function WeeklyShowcaseClient({
                   <tr>
                     <td
                       colSpan={colCount}
-                      className="border-b border-l border-r border-neutral-600 px-3 py-8 text-center text-neutral-500"
+                      className="border-b border-l border-r border-border px-3 py-8 text-center text-muted-foreground"
                     >
                       No rows for week {weekNumber}.
                     </td>
@@ -281,9 +394,9 @@ export default function WeeklyShowcaseClient({
                   rows.map((row) => (
                     <tr
                       key={row.id}
-                      className="group transition-colors hover:bg-neutral-800/50"
+                      className="group transition-colors hover:bg-muted/50"
                     >
-                      {WEEKLY_SHOWCASE_COLUMNS.map((col) => (
+                      {columns.map((col) => (
                         <td key={col.key} className={col.tdClass}>
                           <WeeklyTaskDetailCell
                             detail={row[col.key]}
@@ -335,6 +448,17 @@ export default function WeeklyShowcaseClient({
           error={cellError}
           isSubmitting={isSavingCell}
           onSubmit={handleCellSubmit}
+        />
+
+        <WeeklyColumnHeaderDialog
+          open={headerDialogOpen}
+          onOpenChange={handleHeaderDialogOpenChange}
+          header={headerTarget}
+          labelValue={headerLabel}
+          onLabelChange={setHeaderLabel}
+          error={headerError}
+          isSubmitting={isSavingHeader}
+          onSubmit={handleHeaderSubmit}
         />
     </DashboardShell>
   );

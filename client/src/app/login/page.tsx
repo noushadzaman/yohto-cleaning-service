@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
 import { clearAuthUser, establishServerSession, saveAuthUser } from "@/lib/auth/client";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -85,13 +86,16 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-4 selection:bg-indigo-500/30 font-sans">
-      <div className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-2xl shadow-2xl p-8 backdrop-blur-sm">
+    <div className="relative flex min-h-screen items-center justify-center bg-background p-4 font-sans selection:bg-indigo-500/30">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle />
+      </div>
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-lg">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+          <h1 className="bg-gradient-to-r from-indigo-500 to-cyan-500 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent">
             Welcome Back
           </h1>
-          <p className="text-neutral-400 mt-2">Sign in to your account</p>
+          <p className="mt-2 text-muted-foreground">Sign in to your account</p>
         </div>
 
         <Form {...form}>
@@ -107,15 +111,13 @@ export default function Login() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-neutral-300">
-                    Email Address
-                  </FormLabel>
+                  <FormLabel>Email Address</FormLabel>
                   <FormControl>
                     <Input
                       type="email"
                       placeholder="you@company.com"
                       autoComplete="email"
-                      className="h-11 bg-neutral-950 border-neutral-800 text-neutral-100 placeholder:text-neutral-600 focus-visible:border-indigo-500 focus-visible:ring-indigo-500/40"
+                      className="h-11"
                       {...field}
                     />
                   </FormControl>
@@ -129,13 +131,13 @@ export default function Login() {
               name="password"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-neutral-300">Password</FormLabel>
+                  <FormLabel>Password</FormLabel>
                   <FormControl>
                     <Input
                       type="password"
                       placeholder="••••••••"
                       autoComplete="current-password"
-                      className="h-11 bg-neutral-950 border-neutral-800 text-neutral-100 placeholder:text-neutral-600 focus-visible:border-indigo-500 focus-visible:ring-indigo-500/40"
+                      className="h-11"
                       {...field}
                     />
                   </FormControl>
@@ -164,7 +166,7 @@ export default function Login() {
           </form>
         </Form>
 
-        <p className="mt-6 text-center text-sm text-neutral-400">
+        <p className="mt-6 text-center text-sm text-muted-foreground">
           Don&apos;t have an account?{" "}
           <Link
             href="/register"

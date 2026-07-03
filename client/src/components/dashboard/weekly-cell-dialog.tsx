@@ -74,12 +74,10 @@ export function WeeklyCellDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-neutral-800 bg-neutral-900 text-neutral-100 sm:max-w-xl">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle className="text-neutral-100">{title}</DialogTitle>
-          {description ? (
-            <DialogDescription className="text-neutral-400">{description}</DialogDescription>
-          ) : null}
+          <DialogTitle>{title}</DialogTitle>
+          {description ? <DialogDescription>{description}</DialogDescription> : null}
         </DialogHeader>
 
         <form onSubmit={onSubmit} className="space-y-4">
@@ -113,7 +111,7 @@ export function WeeklyCellDialog({
                     );
                   })}
                 </div>
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-muted-foreground">
                   Pick the day for this row; other columns use it with the selected week tab to set
                   the saved date.
                 </p>
@@ -128,7 +126,7 @@ export function WeeklyCellDialog({
                       variant="outline"
                       disabled={isSubmitting || users.length === 0}
                       aria-labelledby="weekly-users-label"
-                      className="w-full justify-between border-neutral-700 bg-neutral-900 text-neutral-200 hover:bg-neutral-800"
+                      className="w-full justify-between"
                     >
                       <span className="truncate">
                         {userPickerLabelFromIds(selectedUserIds, users)}
@@ -138,14 +136,14 @@ export function WeeklyCellDialog({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="start"
-                    className="max-h-60 w-[var(--radix-dropdown-menu-trigger-width)] overflow-y-auto border-neutral-700 bg-neutral-900 text-neutral-100"
+                    className="max-h-60 w-[var(--radix-dropdown-menu-trigger-width)] overflow-y-auto"
                   >
-                    <DropdownMenuLabel className="text-neutral-400">
+                    <DropdownMenuLabel>
                       Assign users to this row (last name)
                     </DropdownMenuLabel>
-                    <DropdownMenuSeparator className="bg-neutral-700" />
+                    <DropdownMenuSeparator />
                     {users.length === 0 ? (
-                      <p className="px-2 py-1.5 text-sm text-neutral-500">No users available.</p>
+                      <p className="px-2 py-1.5 text-sm text-muted-foreground">No users available.</p>
                     ) : (
                       users.map((user) => (
                         <DropdownMenuCheckboxItem
@@ -153,7 +151,6 @@ export function WeeklyCellDialog({
                           checked={selectedUserIds.includes(user.id)}
                           disabled={isSubmitting}
                           onCheckedChange={() => toggleUserId(user.id)}
-                          className="text-neutral-100 focus:bg-neutral-800 focus:text-neutral-100"
                         >
                           {getUserLastName(user.name)}
                         </DropdownMenuCheckboxItem>
@@ -161,7 +158,7 @@ export function WeeklyCellDialog({
                     )}
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <p className="text-xs text-neutral-500">
+                <p className="text-xs text-muted-foreground">
                   Optional. Last names are saved in the Weekday / date column with the chosen day.
                 </p>
               </div>
@@ -183,13 +180,12 @@ export function WeeklyCellDialog({
 
           {error ? <p className="text-sm text-red-400">{error}</p> : null}
 
-          <DialogFooter className="-mx-0 -mb-0 rounded-b-lg border-neutral-800 bg-neutral-900/80 p-0 pt-2">
+          <DialogFooter className="-mx-0 -mb-0 p-0 pt-2">
             <Button
               type="button"
               variant="outline"
               disabled={isSubmitting}
               onClick={() => onOpenChange(false)}
-              className="border-neutral-700 text-neutral-200 hover:bg-neutral-800 hover:text-white"
             >
               Cancel
             </Button>

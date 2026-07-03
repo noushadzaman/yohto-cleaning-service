@@ -37,39 +37,39 @@ function leadingCellTypography(columnId: string): string {
 
 function leadingHeaderClass(columnId: string): string {
   if (columnId === "dateNum") {
-    return `${LEAD_DATE_W} border-b border-l border-r border-t border-neutral-600 bg-neutral-900/95 text-center backdrop-blur`;
+    return `${LEAD_DATE_W} border-b border-l border-r border-t border-border bg-muted/95 text-center backdrop-blur`;
   }
   if (columnId === "dayName") {
-    return `${LEAD_DAY_W} border-b border-r border-t border-neutral-600 bg-neutral-900/95 text-center backdrop-blur`;
+    return `${LEAD_DAY_W} border-b border-r border-t border-border bg-muted/95 text-center backdrop-blur`;
   }
   if (columnId === "week") {
-    return `${LEAD_WEEK_W} border-b border-r border-t border-neutral-600 bg-neutral-900/95 text-center backdrop-blur`;
+    return `${LEAD_WEEK_W} border-b border-r border-t border-border bg-muted/95 text-center backdrop-blur`;
   }
   return "";
 }
 
 function leadingBodyClass(columnId: string): string {
   if (columnId === "dateNum") {
-    return `${LEAD_DATE_W} border-b border-l border-r border-neutral-600 bg-neutral-900 text-center font-bold text-neutral-300`;
+    return `${LEAD_DATE_W} border-b border-l border-r border-border bg-card text-center font-bold text-foreground`;
   }
   if (columnId === "dayName") {
-    return `${LEAD_DAY_W} border-b border-r border-neutral-600 bg-neutral-900 text-center font-medium text-neutral-400`;
+    return `${LEAD_DAY_W} border-b border-r border-border bg-card text-center font-medium text-muted-foreground`;
   }
   if (columnId === "week") {
-    return `${LEAD_WEEK_W} border-b border-r border-neutral-600 bg-neutral-900 text-center font-medium text-neutral-400`;
+    return `${LEAD_WEEK_W} border-b border-r border-border bg-card text-center font-medium text-muted-foreground`;
   }
   return "";
 }
 
 function scrollHeaderClass(): string {
-  return "border-b border-r border-t border-neutral-600 text-center";
+  return "border-b border-r border-t border-border text-center";
 }
 
 function scrollBodyClass(columnId: string): string {
   if (columnId.startsWith("user-")) {
-    return "border-b border-r border-neutral-600 text-center";
+    return "border-b border-r border-border text-center";
   }
-  return "border-b border-neutral-600 text-center";
+  return "border-b border-border text-center";
 }
 
 function syncHeights(source: HTMLElement | null, target: HTMLElement | null) {
@@ -149,7 +149,7 @@ export function DashboardDataTable({ table, users, summaries }: DashboardDataTab
           return (
             <td
               key={cell.id}
-              className={`h-40 min-h-40 whitespace-nowrap px-1 py-2 align-middle transition-colors hover:bg-neutral-800/50 ${leadingCellTypography(id)} ${leadingBodyClass(id)}`}
+              className={`h-40 min-h-40 whitespace-nowrap px-1 py-2 align-middle transition-colors hover:bg-accent/50 ${leadingCellTypography(id)} ${leadingBodyClass(id)}`}
             >
               {flexRender(cell.column.columnDef.cell, cell.getContext())}
             </td>
@@ -173,7 +173,7 @@ export function DashboardDataTable({ table, users, summaries }: DashboardDataTab
           return (
             <td
               key={cell.id}
-              className={`h-40 min-h-40 whitespace-normal p-0 align-middle text-sm transition-colors hover:bg-neutral-800/50 ${scrollBodyClass(id)}`}
+              className={`h-40 min-h-40 whitespace-normal p-0 align-middle text-sm transition-colors hover:bg-accent/50 ${scrollBodyClass(id)}`}
             >
               {flexRender(cell.column.columnDef.cell, cell.getContext())}
             </td>
@@ -182,7 +182,7 @@ export function DashboardDataTable({ table, users, summaries }: DashboardDataTab
       {hasNoUsers && rowIndex === 0 ? (
         <td
           rowSpan={rows.length}
-          className="border-b border-r border-neutral-600 bg-neutral-900 px-6 align-middle text-center text-sm text-neutral-500"
+          className="border-b border-r border-border bg-card px-6 align-middle text-center text-sm text-muted-foreground"
         >
           No user found
         </td>
@@ -196,7 +196,7 @@ export function DashboardDataTable({ table, users, summaries }: DashboardDataTab
   );
 
   return (
-    <main className="overflow-hidden border border-neutral-800 bg-neutral-900 shadow-2xl backdrop-blur-sm">
+    <main className="overflow-hidden border border-border bg-card shadow-lg backdrop-blur-sm">
       <div className="flex w-full min-w-0">
         {/* Fixed: #, Dy, Wk â€” no horizontal scrollbar underneath */}
         <div
@@ -209,14 +209,14 @@ export function DashboardDataTable({ table, users, summaries }: DashboardDataTab
               <col className={LEAD_DAY_W} />
               <col className={LEAD_WEEK_W} />
             </colgroup>
-            <thead className="bg-neutral-950/50">
+            <thead className="bg-muted/50">
               <tr ref={leadingHeaderRef} className="hover:bg-transparent">
                 {leadingHeaders.map((header) => {
                   const id = header.column.id;
                   return (
                     <th
                       key={header.id}
-                      className={`h-10 whitespace-nowrap px-1 py-2 align-middle font-semibold text-neutral-300 ${leadingCellTypography(id)} ${leadingHeaderClass(id)}`}
+                      className={`h-10 whitespace-nowrap px-1 py-2 align-middle font-semibold text-foreground ${leadingCellTypography(id)} ${leadingHeaderClass(id)}`}
                     >
                       {header.isPlaceholder
                         ? null
@@ -252,7 +252,7 @@ export function DashboardDataTable({ table, users, summaries }: DashboardDataTab
               {hasNoUsers ? <col /> : null}
               {showTotHoursColumn ? <col className={TOT_HOURS_W} /> : null}
             </colgroup>
-            <thead className="bg-neutral-950/50">
+            <thead className="bg-muted/50">
               <tr ref={scrollHeaderRef} className="hover:bg-transparent">
                 {userColumns.map((column) => {
                   const header = table
@@ -264,7 +264,7 @@ export function DashboardDataTable({ table, users, summaries }: DashboardDataTab
                   return (
                     <th
                       key={header.id}
-                      className={`h-10 whitespace-nowrap px-6 py-4 align-middle text-sm font-semibold text-neutral-300 ${scrollHeaderClass()}`}
+                      className={`h-10 whitespace-nowrap px-6 py-4 align-middle text-sm font-semibold text-foreground ${scrollHeaderClass()}`}
                     >
                       {flexRender(header.column.columnDef.header, header.getContext())}
                     </th>
@@ -273,7 +273,7 @@ export function DashboardDataTable({ table, users, summaries }: DashboardDataTab
                 {hasNoUsers ? (
                   <th
                     aria-hidden
-                    className="h-10 border-b border-r border-t border-neutral-600"
+                    className="h-10 border-b border-r border-t border-border"
                   />
                 ) : null}
                 {showTotHoursColumn ? (

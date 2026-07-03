@@ -25,94 +25,168 @@ export type WeeklyShowcaseRow = {
 
 export type WeeklyShowcaseColumnKey = Exclude<keyof WeeklyShowcaseRow, "id">;
 
-const WEEKLY_TH_BASE =
-  "px-4 py-3.5 text-center text-sm font-bold leading-snug";
+export type WeeklyShowcaseHeaderStyle = "default" | "keysSandra" | "alarmSandra";
 
-/** Default header background; Sandra columns use dedicated highlight colors. */
-const TH_BG_DEFAULT = "bg-neutral-900 text-neutral-300";
-const TH_BG_KEYS_SANDRA = "bg-amber-950/95 text-amber-100";
-const TH_BG_ALARM_SANDRA = "bg-rose-950/95 text-rose-100";
+export type WeeklyShowcaseColumnHeader = {
+  columnKey: WeeklyShowcaseColumnKey;
+  label: string;
+  headerStyle: WeeklyShowcaseHeaderStyle;
+};
 
-export const WEEKLY_SHOWCASE_COLUMNS: {
+export type WeeklyShowcaseColumn = {
   key: WeeklyShowcaseColumnKey;
   label: string;
   thClass: string;
   tdClass: string;
   contentAlign: "left" | "center";
-}[] = [
+  headerStyle: WeeklyShowcaseHeaderStyle;
+};
+
+const WEEKLY_TH_BASE =
+  "px-4 py-3.5 text-center text-sm font-bold leading-snug bg-muted text-foreground";
+
+const TD_BORDER = "border-border";
+
+const TD_LAYOUT: Record<
+  WeeklyShowcaseColumnKey,
   {
-    key: "title",
-    label: "Title",
-    thClass: `min-w-[11rem] border-b border-l border-r border-t border-neutral-600 ${WEEKLY_TH_BASE} ${TH_BG_DEFAULT}`,
-    tdClass:
-      "min-w-[11rem] border-b border-l border-r border-neutral-600 p-0 align-top text-neutral-200",
+    thMinWidthClass: string;
+    tdMinWidthClass: string;
+    tdClass: string;
+    contentAlign: "left" | "center";
+    isFirst?: boolean;
+  }
+> = {
+  title: {
+    thMinWidthClass: "min-w-[11rem]",
+    tdMinWidthClass: "min-w-[11rem]",
+    tdClass: `border-b border-l border-r ${TD_BORDER} p-0 align-top text-foreground`,
     contentAlign: "left",
+    isFirst: true,
   },
-  {
-    key: "weekdayDate",
-    label: "Weekday / date",
-    thClass: `min-w-[10rem] border-b border-r border-t border-neutral-600 ${WEEKLY_TH_BASE} ${TH_BG_DEFAULT}`,
-    tdClass:
-      "min-w-[10rem] border-b border-r border-neutral-600 p-0 align-top text-neutral-300",
+  weekdayDate: {
+    thMinWidthClass: "min-w-[10rem]",
+    tdMinWidthClass: "min-w-[10rem]",
+    tdClass: `border-b border-r ${TD_BORDER} p-0 align-top text-muted-foreground`,
     contentAlign: "center",
   },
-  {
-    key: "customer",
-    label: "Customer",
-    thClass: `min-w-[11rem] border-b border-r border-t border-neutral-600 ${WEEKLY_TH_BASE} ${TH_BG_DEFAULT}`,
-    tdClass:
-      "min-w-[11rem] border-b border-r border-neutral-600 p-0 align-top text-neutral-200",
+  customer: {
+    thMinWidthClass: "min-w-[11rem]",
+    tdMinWidthClass: "min-w-[11rem]",
+    tdClass: `border-b border-r ${TD_BORDER} p-0 align-top text-foreground`,
     contentAlign: "left",
   },
+  pointOfBusiness: {
+    thMinWidthClass: "min-w-[14rem]",
+    tdMinWidthClass: "min-w-[14rem]",
+    tdClass: `border-b border-r ${TD_BORDER} p-0 align-top text-foreground`,
+    contentAlign: "left",
+  },
+  keysSandra: {
+    thMinWidthClass: "min-w-[11rem]",
+    tdMinWidthClass: "min-w-[11rem]",
+    tdClass: `border-b border-r ${TD_BORDER} p-0 align-top text-foreground`,
+    contentAlign: "left",
+  },
+  alarmSandra: {
+    thMinWidthClass: "min-w-[11rem]",
+    tdMinWidthClass: "min-w-[11rem]",
+    tdClass: `border-b border-r ${TD_BORDER} p-0 align-top text-foreground`,
+    contentAlign: "left",
+  },
+  instructions: {
+    thMinWidthClass: "min-w-[16rem]",
+    tdMinWidthClass: "min-w-[16rem]",
+    tdClass: `border-b border-r ${TD_BORDER} p-0 align-top text-foreground`,
+    contentAlign: "left",
+  },
+  specialEquipmentDetergent: {
+    thMinWidthClass: "min-w-[14rem]",
+    tdMinWidthClass: "min-w-[14rem]",
+    tdClass: `border-b border-r ${TD_BORDER} p-0 align-top text-foreground`,
+    contentAlign: "left",
+  },
+  maxTimeHoursInclusiveOfDriving: {
+    thMinWidthClass: "min-w-[8rem]",
+    tdMinWidthClass: "min-w-[8rem]",
+    tdClass: `border-b border-r ${TD_BORDER} p-0 align-top tabular-nums text-muted-foreground`,
+    contentAlign: "center",
+  },
+};
+
+export const DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS: WeeklyShowcaseColumnHeader[] = [
+  { columnKey: "title", label: "Title", headerStyle: "default" },
+  { columnKey: "weekdayDate", label: "Weekday / date", headerStyle: "default" },
+  { columnKey: "customer", label: "Customer", headerStyle: "default" },
   {
-    key: "pointOfBusiness",
+    columnKey: "pointOfBusiness",
     label: "Point of business / exact work area",
-    thClass: `min-w-[14rem] border-b border-r border-t border-neutral-600 ${WEEKLY_TH_BASE} ${TH_BG_DEFAULT}`,
-    tdClass:
-      "min-w-[14rem] border-b border-r border-neutral-600 p-0 align-top text-neutral-200",
-    contentAlign: "left",
+    headerStyle: "default",
   },
+  { columnKey: "keysSandra", label: "Keys Sandra fills in", headerStyle: "default" },
+  { columnKey: "alarmSandra", label: "Alarm Sandra fills in", headerStyle: "default" },
+  { columnKey: "instructions", label: "Instructions", headerStyle: "default" },
   {
-    key: "keysSandra",
-    label: "Keys Sandra fills in",
-    thClass: `min-w-[11rem] border-b border-r border-t border-amber-800/60 ${WEEKLY_TH_BASE} ${TH_BG_KEYS_SANDRA}`,
-    tdClass:
-      "min-w-[11rem] border-b border-r border-neutral-600 p-0 align-top text-neutral-200",
-    contentAlign: "left",
-  },
-  {
-    key: "alarmSandra",
-    label: "Alarm Sandra fills in",
-    thClass: `min-w-[11rem] border-b border-r border-t border-rose-800/60 ${WEEKLY_TH_BASE} ${TH_BG_ALARM_SANDRA}`,
-    tdClass:
-      "min-w-[11rem] border-b border-r border-neutral-600 p-0 align-top text-neutral-200",
-    contentAlign: "left",
-  },
-  {
-    key: "instructions",
-    label: "Instructions",
-    thClass: `min-w-[16rem] border-b border-r border-t border-neutral-600 ${WEEKLY_TH_BASE} ${TH_BG_DEFAULT}`,
-    tdClass:
-      "min-w-[16rem] border-b border-r border-neutral-600 p-0 align-top text-neutral-200",
-    contentAlign: "left",
-  },
-  {
-    key: "specialEquipmentDetergent",
+    columnKey: "specialEquipmentDetergent",
     label: "Special equipment / detergent",
-    thClass: `min-w-[14rem] border-b border-r border-t border-neutral-600 ${WEEKLY_TH_BASE} ${TH_BG_DEFAULT}`,
-    tdClass:
-      "min-w-[14rem] border-b border-r border-neutral-600 p-0 align-top text-neutral-200",
-    contentAlign: "left",
+    headerStyle: "default",
   },
   {
-    key: "maxTimeHoursInclusiveOfDriving",
+    columnKey: "maxTimeHoursInclusiveOfDriving",
     label: "Max time (h) inclusive of driving",
-    thClass: `min-w-[8rem] border-b border-r border-t border-neutral-600 ${WEEKLY_TH_BASE} ${TH_BG_DEFAULT}`,
-    tdClass:
-      "min-w-[8rem] border-b border-r border-neutral-600 p-0 align-top tabular-nums text-neutral-300",
-    contentAlign: "center",
+    headerStyle: "default",
   },
 ];
+
+export const WEEKLY_SHOWCASE_HEADER_STYLE_OPTIONS: {
+  value: WeeklyShowcaseHeaderStyle;
+  label: string;
+}[] = [
+  { value: "default", label: "Default (dark gray)" },
+  { value: "keysSandra", label: "Keys Sandra (amber)" },
+  { value: "alarmSandra", label: "Alarm Sandra (rose)" },
+];
+
+const HEADER_STYLE_SET = new Set<string>(
+  WEEKLY_SHOWCASE_HEADER_STYLE_OPTIONS.map((option) => option.value)
+);
+
+function normalizeHeaderStyle(value: string): WeeklyShowcaseHeaderStyle {
+  return HEADER_STYLE_SET.has(value) ? (value as WeeklyShowcaseHeaderStyle) : "default";
+}
+
+function buildThClass(columnKey: WeeklyShowcaseColumnKey): string {
+  const layout = TD_LAYOUT[columnKey];
+  const borderSides = layout.isFirst
+    ? `border-b border-l border-r border-t ${TD_BORDER}`
+    : `border-b border-r border-t ${TD_BORDER}`;
+  return `${layout.thMinWidthClass} ${borderSides} ${WEEKLY_TH_BASE}`;
+}
+
+export function buildWeeklyShowcaseColumns(
+  headers: WeeklyShowcaseColumnHeader[] | null | undefined = DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS,
+): WeeklyShowcaseColumn[] {
+  const resolvedHeaders =
+    headers && headers.length > 0 ? headers : DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS;
+  const byKey = new Map(resolvedHeaders.map((header) => [header.columnKey, header]));
+
+  return DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS.map((defaults) => {
+    const header = byKey.get(defaults.columnKey) ?? defaults;
+    const layout = TD_LAYOUT[header.columnKey];
+    const style = normalizeHeaderStyle(header.headerStyle);
+    return {
+      key: header.columnKey,
+      label: header.label,
+      headerStyle: style,
+      thClass: buildThClass(header.columnKey),
+      tdClass: `${layout.tdMinWidthClass} ${layout.tdClass}`,
+      contentAlign: layout.contentAlign,
+    };
+  });
+}
+
+/** Default columns for static key iteration (merge, row utils). */
+export const WEEKLY_SHOWCASE_COLUMNS = buildWeeklyShowcaseColumns();
 
 /** Row returned from GET /api/task-details */
 export type TaskDetailRecord = {

@@ -4,9 +4,29 @@ import { serverApiUrl } from "@/env";
 import { getServerAuthHeaders } from "@/lib/auth/server";
 import type {
   TaskDetailRecord,
+  WeeklyShowcaseColumnHeader,
   WeeklyShowcaseColumnKey,
+  WeeklyShowcaseHeaderStyle,
 } from "@/features/dashboard/weekly-showcase-types";
-import type { TaskInput, TaskUpdateBody } from "./types";
+import type { TaskInput, TaskUpdateBody, TeamMember } from "./types";
+
+export async function fetchTeamMembersAction(): Promise<TeamMember[] | null> {
+  try {
+    const authHeaders = await getServerAuthHeaders();
+    const response = await fetch(serverApiUrl("/api/users"), {
+      headers: authHeaders,
+      cache: "no-store",
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    return (await response.json()) as TeamMember[];
+  } catch {
+    return null;
+  }
+}
 
 export async function updateUserApproval(userId: number, isApproved: boolean): Promise<boolean> {
   try {
@@ -135,6 +155,47 @@ export async function upsertWeeklyTaskDetail(input: {
     }
 
     return { ok: true, detail: data as TaskDetailRecord };
+  } catch {
+    return { ok: false, error: "Request failed. Please check backend connection." };
+  }
+}
+
+export type UpsertWeeklyColumnHeaderResult =
+  | { ok: true; header: WeeklyShowcaseColumnHeader }
+  | { ok: false; error: string };
+
+export async function upsertWeeklyShowcaseColumnHeader(input: {
+  columnKey: WeeklyShowcaseColumnKey;
+  label: string;
+  headerStyle: WeeklyShowcaseHeaderStyle;
+}): Promise<UpsertWeeklyColumnHeaderResult> {
+  try {
+    const authHeaders = await getServerAuthHeaders();
+    const response = await fetch(serverApiUrl("/api/weekly-showcase/column-headers"), {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...authHeaders },
+      body: JSON.stringify(input),
+      cache: "no-store",
+    });
+
+    const data = (await response.json().catch(() => null)) as
+      | WeeklyShowcaseColumnHeader
+      | { error?: string }
+      | null;
+
+    if (!response.ok) {
+      const err =
+        data && typeof data === "object" && "error" in data && typeof data.error === "string"
+          ? data.error
+          : "Failed to save column header.";
+      return { ok: false, error: err };
+    }
+
+    if (!data || typeof data !== "object" || !("columnKey" in data)) {
+      return { ok: false, error: "Invalid response from server." };
+    }
+
+    return { ok: true, header: data as WeeklyShowcaseColumnHeader };
   } catch {
     return { ok: false, error: "Request failed. Please check backend connection." };
   }

@@ -48,7 +48,7 @@ export function WeeklyTaskDetailCell({
       return (
         <div
           className={cn(
-            "group/cell flex min-h-[5rem] w-full items-center p-3 text-neutral-600",
+            "group/cell flex min-h-[5rem] w-full items-center p-3 text-muted-foreground",
             contentAlign === "center" ? "justify-center text-center" : "justify-start text-left",
             className
           )}
@@ -69,8 +69,8 @@ export function WeeklyTaskDetailCell({
         <button
           type="button"
           className={cn(
-            "rounded-md p-2 text-neutral-500 transition-colors",
-            "hover:bg-neutral-800/90 hover:text-indigo-300",
+            "rounded-md p-2 text-muted-foreground transition-colors",
+            "hover:bg-accent hover:text-indigo-500 dark:hover:text-indigo-300",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/80"
           )}
           aria-label="Add cell content"
@@ -101,15 +101,15 @@ export function WeeklyTaskDetailCell({
           title={link.label}
           onClick={(e) => e.stopPropagation()}
           className={cn(
-            "inline-flex max-w-full items-center gap-2 rounded-md border border-neutral-600 bg-neutral-800/70 px-2.5 py-1.5",
-            "transition-colors hover:border-indigo-400 hover:bg-neutral-800",
+            "inline-flex max-w-full items-center gap-2 rounded-md border border-border bg-muted px-2.5 py-1.5",
+            "transition-colors hover:border-indigo-400 hover:bg-accent",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/80"
           )}
         >
           <span className="flex size-5 shrink-0 items-center justify-center rounded-sm bg-red-600 text-white">
             <FileText className="size-3" strokeWidth={2} aria-hidden />
           </span>
-          <span className="truncate text-xs font-medium text-neutral-100">
+          <span className="truncate text-xs font-medium text-foreground">
             {link.label}
           </span>
         </a>
@@ -117,7 +117,7 @@ export function WeeklyTaskDetailCell({
         <RichTextContent
           html={detail.text}
           className={cn(
-            "w-full text-sm leading-relaxed text-neutral-100",
+            "w-full text-sm leading-relaxed text-foreground",
             contentAlign === "center" ? "text-center" : "text-left"
           )}
         />
@@ -127,8 +127,8 @@ export function WeeklyTaskDetailCell({
         <button
           type="button"
           className={cn(
-            "absolute right-1.5 top-1.5 rounded-md p-1 text-neutral-500 transition-colors",
-            "opacity-60 hover:bg-neutral-800/90 hover:text-indigo-300",
+            "absolute right-1.5 top-1.5 rounded-md p-1 text-muted-foreground transition-colors",
+            "opacity-60 hover:bg-accent hover:text-indigo-500 dark:hover:text-indigo-300",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/80",
             "group-hover/cell:opacity-100"
           )}

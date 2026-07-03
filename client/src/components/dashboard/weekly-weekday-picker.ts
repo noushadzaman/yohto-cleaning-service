@@ -21,9 +21,10 @@ export type WeekdayTheme = {
 
 /** Shared red styling for all weekdays in picker and table. */
 export const WEEKDAY_THEME: WeekdayTheme = {
-  text: "text-red-400",
-  selected: "border-red-400 bg-red-600 text-white hover:bg-red-500 hover:text-white",
-  unselected: "border-red-900/80 bg-red-950/40 text-red-300 hover:bg-red-950/70",
+  text: "text-red-600 dark:text-red-400",
+  selected: "border-red-500 bg-red-600 text-white hover:bg-red-500 hover:text-white",
+  unselected:
+    "border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900/80 dark:bg-red-950/40 dark:text-red-300 dark:hover:bg-red-950/70",
 };
 
 const ALIAS_TO_SHORT: Record<string, WeekdayPickerValue> = {
@@ -54,6 +55,20 @@ const FULL_LABEL_BY_SHORT = Object.fromEntries(
 
 /** Separator between weekday and assigned user names in `weekdayDate` cells. */
 export const WEEKDAY_DATE_USER_SEPARATOR = " · ";
+
+/** Strip rich-text/HTML wrappers so weekday cells parse reliably. */
+export function normalizeWeekdayDateCellRaw(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed || trimmed === "—") return "";
+  if (!/<[a-z][\s\S]*>/i.test(trimmed)) return trimmed;
+  return trimmed
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<\/p>/gi, " ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 export function getUserLastName(fullName: string): string {
   const parts = fullName.trim().split(/\s+/).filter(Boolean);
@@ -89,7 +104,7 @@ export function parseWeekdayDateCellText(raw: string): {
   weekday: string;
   userNames: string[];
 } {
-  const t = raw.trim();
+  const t = normalizeWeekdayDateCellRaw(raw);
   if (!t || t === "—") {
     return { weekday: "", userNames: [] };
   }

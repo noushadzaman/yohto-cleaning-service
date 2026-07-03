@@ -121,7 +121,7 @@
 /* Dashboard table: horizontal scroll only under user columns */
 .dashboard-table-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #525252 #171717;
+  scrollbar-color: var(--muted-foreground) var(--muted);
 }
 
 .dashboard-table-scroll::-webkit-scrollbar {
@@ -129,18 +129,18 @@
 }
 
 .dashboard-table-scroll::-webkit-scrollbar-track {
-  background: #171717;
+  background: var(--muted);
   border-radius: 0;
 }
 
 .dashboard-table-scroll::-webkit-scrollbar-thumb {
-  background: #525252;
+  background: var(--muted-foreground);
   border-radius: 5px;
-  border: 2px solid #171717;
+  border: 2px solid var(--muted);
 }
 
 .dashboard-table-scroll::-webkit-scrollbar-thumb:hover {
-  background: #737373;
+  opacity: 0.8;
 }
 
 .dashboard-table-scroll::-webkit-scrollbar-button {

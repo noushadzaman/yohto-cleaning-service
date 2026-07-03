@@ -1,6 +1,8 @@
 import { CirclePlus, Pencil } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
+  getUserLastName,
+  normalizeWeekdayDateCellRaw,
   parseWeekdayDateCellText,
   weekdayFullLabel,
   weekdayTheme,
@@ -19,8 +21,8 @@ export function WeeklyWeekdayDateCell({
   canEdit = true,
   onOpenEdit,
 }: WeeklyWeekdayDateCellProps) {
-  const trimmed = text.trim();
-  const hasData = Boolean(trimmed && trimmed !== "—");
+  const trimmed = normalizeWeekdayDateCellRaw(text);
+  const hasData = Boolean(trimmed);
   const { weekday, userNames } = hasData
     ? parseWeekdayDateCellText(trimmed)
     : { weekday: "", userNames: [] as string[] };
@@ -32,7 +34,7 @@ export function WeeklyWeekdayDateCell({
       return (
         <div
           className={cn(
-            "group/cell flex min-h-[5rem] w-full items-center justify-center px-4 py-3 text-neutral-600",
+            "group/cell flex min-h-[5rem] w-full items-center justify-center px-4 py-3 text-muted-foreground",
             className
           )}
         >
@@ -51,8 +53,8 @@ export function WeeklyWeekdayDateCell({
         <button
           type="button"
           className={cn(
-            "rounded-md p-2 text-neutral-500 transition-colors",
-            "hover:bg-neutral-800/90 hover:text-indigo-300",
+            "rounded-md p-2 text-muted-foreground transition-colors",
+            "hover:bg-accent hover:text-indigo-500 dark:hover:text-indigo-300",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/80"
           )}
           aria-label="Add weekday and users"
@@ -77,7 +79,7 @@ export function WeeklyWeekdayDateCell({
       <span
         className={cn(
           "text-center text-sm font-semibold leading-snug tracking-wide",
-          theme?.text ?? "text-neutral-200"
+          theme?.text ?? "text-foreground"
         )}
       >
         {fullDay}
@@ -87,9 +89,9 @@ export function WeeklyWeekdayDateCell({
           {userNames.map((name) => (
             <span
               key={name}
-              className="rounded-md border border-neutral-700 bg-neutral-800/80 px-2 py-0.5 text-xs font-medium text-neutral-300"
+              className="rounded-md border border-border bg-muted px-2 py-0.5 text-xs font-medium text-foreground"
             >
-              {name}
+              {getUserLastName(name)}
             </span>
           ))}
         </div>
@@ -99,8 +101,8 @@ export function WeeklyWeekdayDateCell({
         <button
           type="button"
           className={cn(
-            "absolute right-2 top-2 rounded-md p-1 text-neutral-500 transition-colors",
-            "opacity-60 hover:bg-neutral-800/90 hover:text-indigo-300",
+            "absolute right-2 top-2 rounded-md p-1 text-muted-foreground transition-colors",
+            "opacity-60 hover:bg-accent hover:text-indigo-500 dark:hover:text-indigo-300",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/80",
             "group-hover/cell:opacity-100"
           )}

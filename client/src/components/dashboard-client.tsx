@@ -13,6 +13,7 @@ import type {
   TaskRecord,
   TransportType,
 } from "@/features/dashboard/types";
+import { useAdminTeamMembers } from "./dashboard/use-admin-team-members";
 import { DashboardDataTable } from "./dashboard/dashboard-data-table";
 import { DashboardShell } from "./dashboard/dashboard-shell";
 import { MonthlyMonthPagination } from "./dashboard/monthly-month-pagination";
@@ -41,12 +42,16 @@ export default function DashboardClient({
 }: DashboardClientProps) {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const [teamMembers, setTeamMembers] = useState(initialTeamMembers);
   const [pendingApprovalIds, setPendingApprovalIds] = useState<Set<number>>(
     () => new Set()
   );
   const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<number>>(
     () => new Set()
+  );
+  const pendingMutation = pendingApprovalIds.size > 0 || pendingDeleteIds.size > 0;
+  const { teamMembers, setTeamMembers, refetchTeamMembers } = useAdminTeamMembers(
+    initialTeamMembers,
+    pendingMutation
   );
   const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
   const [selectedTaskUser, setSelectedTaskUser] =
@@ -161,11 +166,8 @@ export default function DashboardClient({
     setLoading(false);
   }, [router]);
 
-  // Clear pending toggle spinners once the server-refreshed props arrive
-  // (this is what makes the spinner stay visible until the user columns
-  // actually update).
+  // Clear pending toggle spinners once the server-refreshed props arrive.
   useEffect(() => {
-    setTeamMembers(initialTeamMembers);
     setPendingApprovalIds((current) => (current.size === 0 ? current : new Set()));
     setPendingDeleteIds((current) => (current.size === 0 ? current : new Set()));
   }, [initialTeamMembers, users]);
@@ -223,9 +225,8 @@ export default function DashboardClient({
         return;
       }
 
-      // Pending stays true until the server-refreshed props land
-      // (cleared by the effect above), so the spinner persists until
-      // the user columns actually update.
+      await refetchTeamMembers();
+      clearPending();
       router.refresh();
     } catch (err) {
       setTeamMembers((members) =>
@@ -264,6 +265,8 @@ export default function DashboardClient({
       }
 
       setTeamMembers((members) => members.filter((member) => member.id !== id));
+      await refetchTeamMembers();
+      clearPending();
       router.refresh();
     } catch (err) {
       clearPending();
@@ -368,7 +371,7 @@ export default function DashboardClient({
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-neutral-950 text-white">
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground">
         Loading...
       </div>
     );

@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "./app-sidebar";
 import { ScrollToTop } from "./scroll-to-top";
-import { SIDEBAR_DARK_THEME } from "./sidebar-theme";
 
 type DashboardShellProps = {
   user: CurrentUser | null;
@@ -37,11 +36,7 @@ export function DashboardShell({
   children,
 }: DashboardShellProps) {
   return (
-    <SidebarProvider
-      defaultOpen={false}
-      style={SIDEBAR_DARK_THEME}
-      className="bg-neutral-950 font-sans text-neutral-100 selection:bg-indigo-500/30"
-    >
+    <SidebarProvider defaultOpen={false} className="bg-background font-sans text-foreground">
       <AppSidebar
         user={user}
         manageableMembers={manageableMembers}
@@ -51,22 +46,18 @@ export function DashboardShell({
         onDeleteUser={onDeleteUser}
         onLogout={onLogout}
       />
-      <SidebarInset className="min-w-0 bg-neutral-950 text-neutral-100">
-        <header className="sticky top-0 z-30 flex shrink-0 items-center gap-2 border-b border-neutral-800 bg-neutral-950/80 px-4 py-3 backdrop-blur-sm sm:px-6">
-          <SidebarTrigger className="border-0 bg-transparent text-neutral-400 shadow-none hover:bg-transparent hover:text-white md:hidden" />
+      <SidebarInset className="min-w-0 bg-background text-foreground">
+        <header className="sticky top-0 z-30 flex shrink-0 items-center gap-3 border-b border-border bg-background/80 px-4 py-3 backdrop-blur-sm sm:px-6">
+          <SidebarTrigger className="shrink-0 border-0 bg-transparent text-muted-foreground shadow-none hover:bg-accent hover:text-foreground md:hidden" />
           <div className="flex min-w-0 flex-col">
-            <h1 className="truncate bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-lg font-extrabold tracking-tight text-transparent sm:text-xl">
+            <h1 className="truncate bg-gradient-to-r from-indigo-500 to-cyan-500 bg-clip-text text-lg font-extrabold tracking-tight text-transparent sm:text-xl">
               {title}
             </h1>
-            <p className="truncate text-xs text-neutral-400 sm:text-sm">
-              {subtitle}
-            </p>
+            <p className="truncate text-xs text-muted-foreground sm:text-sm">{subtitle}</p>
           </div>
         </header>
         <div className="flex-1 overflow-x-hidden p-4 sm:p-6 lg:p-8">
-          <div className="mx-auto w-full max-w-7xl space-y-6 sm:space-y-8">
-            {children}
-          </div>
+          <div className="mx-auto w-full max-w-7xl space-y-6 sm:space-y-8">{children}</div>
         </div>
       </SidebarInset>
       <ScrollToTop />

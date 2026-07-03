@@ -2,9 +2,22 @@ import type { NextConfig } from "next";
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.pcsmonthlypla.online";
 
+const csp = [
+  "default-src 'self'",
+  "img-src 'self' data: https:",
+  "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://static.cloudflareinsights.com",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self' data: https:",
+  "connect-src 'self' wss: ws: https://cloudflareinsights.com",
+].join("; ");
+
 const nextConfig: NextConfig = {
-  // Hostname only (no scheme). Required when accessing `next dev` from a LAN IP.
-  allowedDevOrigins: ["192.168.0.169:3000", "192.168.0.169"],
+  // Allow dev access via LAN IP or tunneled production hostname.
+  allowedDevOrigins: [
+    "192.168.0.169:3000",
+    "192.168.0.169",
+    "app.pcsmonthlypla.online",
+  ],
 
   // HTTP static assets 500 behind Cloudflare; force HTTPS in production.
   async redirects() {
@@ -22,19 +35,18 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // Add security headers to fix CSP issues
   async headers() {
     return [
       {
-        source: '/:path*',
+        source: "/:path*",
         headers: [
           {
-            key: 'Content-Security-Policy',
-            value: "default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:;"
-          }
+            key: "Content-Security-Policy",
+            value: csp,
+          },
         ],
       },
-    ]
+    ];
   },
 };
 
