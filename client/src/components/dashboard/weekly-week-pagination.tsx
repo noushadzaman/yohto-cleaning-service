@@ -42,10 +42,10 @@ export function WeeklyWeekPagination({ year, weekNumber }: WeeklyWeekPaginationP
       <div className="flex min-w-0 flex-col items-center gap-0.5 text-center">
         <p className="text-sm font-semibold text-neutral-100">
           Week {weekNumber}
-          <span className="font-normal text-neutral-400"> · {year}</span>
+          <span className="font-medium text-neutral-200"> · {year}</span>
         </p>
         {rangeLabel ? (
-          <p className="text-xs text-neutral-300">{rangeLabel}</p>
+          <p className="text-base font-medium text-neutral-200">{rangeLabel}</p>
         ) : null}
         {isCurrentWeek ? (
           <span className="text-[0.65rem] font-medium uppercase tracking-wide text-indigo-300">

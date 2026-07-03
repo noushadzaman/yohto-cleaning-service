@@ -115,15 +115,11 @@ export function AppSidebar({
               className="flex-1 group-data-[collapsible=icon]:hidden"
             >
               <Link href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-500 text-sm font-extrabold text-white">
-                  Y
-                </div>
-                <div className="grid flex-1 text-left leading-tight">
-                  <span className="truncate font-semibold">Yohto</span>
-                  <span className="truncate text-xs text-neutral-400">
-                    Team dashboard
-                  </span>
-                </div>
+                <img
+                  src="/logo.jpeg"
+                  alt="PCS - Professional Cleaning Service"
+                  className="h-9 w-auto rounded-md bg-white"
+                />
               </Link>
             </SidebarMenuButton>
             <SidebarTrigger className="shrink-0 text-neutral-400 hover:bg-sidebar-accent hover:text-white group-data-[collapsible=icon]:mx-auto" />

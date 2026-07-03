@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef } from "react";
 import { flexRender, type Row, type Table } from "@tanstack/react-table";
 import type { DashboardUserSummaries } from "@/features/dashboard/dashboard-summary";
 import type { DashboardRow, User } from "@/features/dashboard/types";
+import { cn } from "@/lib/utils";
 import {
   DashboardSummaryFooterLeading,
   DashboardSummaryFooterScroll,
@@ -25,6 +26,11 @@ import {
 
 const TABLE_CLASS =
   "w-full border-separate border-spacing-0 table-fixed caption-bottom text-center text-sm";
+
+// Subtle colored side borders used to highlight the currently logged-in
+// user's column (always the first user column) so it stands out from the
+// rest without a distracting background fill.
+const FIRST_USER_COLUMN_HIGHLIGHT = "border-l border-r border-indigo-500/40";
 
 function isLeadingColumn(columnId: string): boolean {
   return columnId === "dateNum" || columnId === "dayName" || columnId === "week";
@@ -92,6 +98,7 @@ export function DashboardDataTable({ table, users, summaries }: DashboardDataTab
     .getAllLeafColumns()
     .filter((column) => column.id.startsWith("user-"));
   const hasNoUsers = userColumns.length === 0;
+  const firstUserColumnId = userColumns[0]?.id;
   const rows = table.getRowModel().rows;
   const showTotHoursColumn = !hasNoUsers;
 
@@ -170,10 +177,15 @@ export function DashboardDataTable({ table, users, summaries }: DashboardDataTab
         .filter((cell) => cell.column.id.startsWith("user-"))
         .map((cell) => {
           const id = cell.column.id;
+          const highlight = id === firstUserColumnId ? FIRST_USER_COLUMN_HIGHLIGHT : "";
           return (
             <td
               key={cell.id}
-              className={`h-40 min-h-40 whitespace-normal p-0 align-middle text-sm transition-colors hover:bg-neutral-800/50 ${scrollBodyClass(id)}`}
+              className={cn(
+                "h-40 min-h-40 whitespace-normal p-0 align-middle text-sm transition-colors hover:bg-neutral-800/50",
+                scrollBodyClass(id),
+                highlight
+              )}
             >
               {flexRender(cell.column.columnDef.cell, cell.getContext())}
             </td>
@@ -261,10 +273,16 @@ export function DashboardDataTable({ table, users, summaries }: DashboardDataTab
                   if (!header) {
                     return null;
                   }
+                  const highlight =
+                    column.id === firstUserColumnId ? FIRST_USER_COLUMN_HIGHLIGHT : "";
                   return (
                     <th
                       key={header.id}
-                      className={`h-10 whitespace-nowrap px-6 py-4 align-middle text-sm font-semibold text-neutral-300 ${scrollHeaderClass()}`}
+                      className={cn(
+                        "h-10 whitespace-nowrap px-6 py-4 align-middle text-sm font-semibold text-neutral-300",
+                        scrollHeaderClass(),
+                        highlight
+                      )}
                     >
                       {flexRender(header.column.columnDef.header, header.getContext())}
                     </th>

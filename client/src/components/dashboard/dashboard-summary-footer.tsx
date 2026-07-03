@@ -79,8 +79,14 @@ function SummaryFooterScrollRow({
         "[&>td]:border-b [&>td]:border-neutral-600"
       )}
     >
-      {users.map((user) => (
-        <td key={user.id} className={SUMMARY_FOOTER_VALUE_CLASS}>
+      {users.map((user, index) => (
+        <td
+          key={user.id}
+          className={cn(
+            SUMMARY_FOOTER_VALUE_CLASS,
+            index === 0 && "border-l border-r border-indigo-500/40"
+          )}
+        >
           {formatSummaryHours(valuesByUserId.get(user.id) ?? 0)}
         </td>
       ))}
