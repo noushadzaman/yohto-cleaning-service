@@ -89,7 +89,6 @@ export function DashboardTaskCell({
             </a>
           ) : (
             <span className="inline-flex max-w-full items-center gap-1 text-xs text-neutral-400">
-              <MapPin className="size-3.5 shrink-0" aria-hidden />
               {locationContent}
             </span>
           )}
