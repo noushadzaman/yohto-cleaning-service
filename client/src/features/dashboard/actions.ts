@@ -2,11 +2,12 @@
 
 import { serverApiUrl } from "@/env";
 import { getServerAuthHeaders } from "@/lib/auth/server";
-import type {
-  TaskDetailRecord,
-  WeeklyShowcaseColumnHeader,
-  WeeklyShowcaseColumnKey,
-  WeeklyShowcaseHeaderStyle,
+import {
+  isCustomWeeklyColumnKey,
+  type TaskDetailRecord,
+  type WeeklyShowcaseColumnHeader,
+  type WeeklyShowcaseColumnKey,
+  type WeeklyShowcaseHeaderStyle,
 } from "@/features/dashboard/weekly-showcase-types";
 import type { TaskInput, TaskUpdateBody, TeamMember } from "./types";
 
@@ -168,6 +169,8 @@ export async function upsertWeeklyShowcaseColumnHeader(input: {
   columnKey: WeeklyShowcaseColumnKey;
   label: string;
   headerStyle: WeeklyShowcaseHeaderStyle;
+  isVisible?: boolean;
+  sortOrder?: number;
 }): Promise<UpsertWeeklyColumnHeaderResult> {
   try {
     const authHeaders = await getServerAuthHeaders();
@@ -200,3 +203,137 @@ export async function upsertWeeklyShowcaseColumnHeader(input: {
     return { ok: false, error: "Request failed. Please check backend connection." };
   }
 }
+
+export type CreateWeeklyColumnResult =
+  | { ok: true; header: WeeklyShowcaseColumnHeader }
+  | { ok: false; error: string };
+
+export async function createWeeklyShowcaseColumn(input: {
+  label: string;
+}): Promise<CreateWeeklyColumnResult> {
+  try {
+    const authHeaders = await getServerAuthHeaders();
+    const response = await fetch(serverApiUrl("/api/weekly-showcase/column-headers"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...authHeaders },
+      body: JSON.stringify(input),
+      cache: "no-store",
+    });
+
+    const data = (await response.json().catch(() => null)) as
+      | WeeklyShowcaseColumnHeader
+      | { error?: string }
+      | null;
+
+    if (!response.ok) {
+      let err = "Failed to add column.";
+      if (data && typeof data === "object" && "error" in data && typeof data.error === "string") {
+        err = data.error;
+      } else if (response.status === 404) {
+        err =
+          "Add column is not available on the API server. Restart or redeploy the backend with the latest code.";
+      } else if (response.status === 503) {
+        err = "Database migration required. Run: cd server && npx prisma migrate deploy";
+      }
+      return { ok: false, error: err };
+    }
+
+    if (!data || typeof data !== "object" || !("columnKey" in data)) {
+      return { ok: false, error: "Invalid response from server." };
+    }
+
+    return { ok: true, header: data as WeeklyShowcaseColumnHeader };
+  } catch {
+    return { ok: false, error: "Request failed. Please check backend connection." };
+  }
+}
+
+export type RemoveWeeklyColumnResult =
+  | { ok: true; columnKey: WeeklyShowcaseColumnKey; hidden: boolean }
+  | { ok: false; error: string };
+
+export async function removeWeeklyShowcaseColumn(
+  columnKey: WeeklyShowcaseColumnKey,
+  header?: WeeklyShowcaseColumnHeader
+): Promise<RemoveWeeklyColumnResult> {
+  if (!isCustomWeeklyColumnKey(columnKey)) {
+    if (!header) {
+      return { ok: false, error: "Column header data is missing." };
+    }
+
+    const result = await upsertWeeklyShowcaseColumnHeader({
+      columnKey: header.columnKey,
+      label: header.label,
+      headerStyle: header.headerStyle,
+      isVisible: false,
+      sortOrder: header.sortOrder,
+    });
+
+    if (!result.ok) {
+      return { ok: false, error: result.error };
+    }
+
+    return { ok: true, columnKey, hidden: true };
+  }
+
+  try {
+    const authHeaders = await getServerAuthHeaders();
+    const response = await fetch(
+      serverApiUrl(`/api/weekly-showcase/column-headers/${encodeURIComponent(columnKey)}`),
+      {
+        method: "DELETE",
+        headers: authHeaders,
+        cache: "no-store",
+      }
+    );
+
+    if (response.status === 204) {
+      return { ok: true, columnKey, hidden: false };
+    }
+
+    const data = (await response.json().catch(() => null)) as
+      | WeeklyShowcaseColumnHeader
+      | { error?: string }
+      | null;
+
+    if (!response.ok) {
+      let err = "Failed to remove column.";
+      if (data && typeof data === "object" && "error" in data && typeof data.error === "string") {
+        err = data.error;
+      } else if (response.status === 404) {
+        err =
+          "Remove column is not available on the API server. Restart or redeploy the backend with the latest code.";
+      } else if (response.status === 503) {
+        err = "Database migration required. Run: cd server && npx prisma migrate deploy";
+      }
+      return { ok: false, error: err };
+    }
+
+    return { ok: true, columnKey, hidden: false };
+  } catch {
+    return { ok: false, error: "Request failed. Please check backend connection." };
+  }
+}
+
+export type RestoreWeeklyColumnResult =
+  | { ok: true; header: WeeklyShowcaseColumnHeader }
+  | { ok: false; error: string };
+
+export async function restoreWeeklyShowcaseColumn(
+  header: WeeklyShowcaseColumnHeader
+): Promise<RestoreWeeklyColumnResult> {
+  const result = await upsertWeeklyShowcaseColumnHeader({
+    columnKey: header.columnKey,
+    label: header.label,
+    headerStyle: header.headerStyle,
+    isVisible: true,
+    sortOrder: header.sortOrder,
+  });
+
+  if (!result.ok) {
+    return { ok: false, error: result.error };
+  }
+
+  return { ok: true, header: result.header };
+}
+

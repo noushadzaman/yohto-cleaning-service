@@ -22,9 +22,9 @@ export function DashboardTotHoursCell({
   return (
     <td
       className={cn(
-        "border-b border-neutral-600",
-        isFooter ? TOT_COLUMN_FOOTER_CLASS : TOT_COLUMN_BODY_CLASS,
-        !isFooter && "border-r border-neutral-600",
+        "border-b border-border",
+        isFooter ? TOT_COLUMN_FOOTER_CLASS : cn(TOT_COLUMN_BODY_CLASS, "align-middle"),
+        !isFooter && "border-r border-border",
         className
       )}
     >
@@ -35,7 +35,7 @@ export function DashboardTotHoursCell({
 
 export const TOT_HOURS_HEADER_CLASS = cn(
   TOT_COLUMN_HEADER_CLASS,
-  "border-r border-neutral-600"
+  "border-r border-border"
 );
 
 export function TotHoursHeaderLabel() {

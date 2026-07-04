@@ -1,14 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 
-import { clearAuthUser, establishServerSession, saveAuthUser } from "@/lib/auth/client";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { clearAuthUser, saveAuthUser } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,6 +25,17 @@ const loginSchema = z.object({
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
+
+type LoginResponse = {
+  user?: {
+    isApproved?: boolean;
+    id?: number;
+    name?: string;
+    email?: string;
+    isAdmin?: boolean;
+  };
+  error?: string;
+};
 
 export default function Login() {
   const [error, setError] = useState("");
@@ -46,13 +56,23 @@ export default function Login() {
       const response = await fetch("/api/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify(values),
       });
 
-      const data = await response.json();
+      const data = (await response.json().catch(() => null)) as LoginResponse | null;
+      if (!data) {
+        setError("Invalid response from server. Please try again.");
+        return;
+      }
 
       if (!response.ok) {
         setError(data.error || "Login failed");
+        return;
+      }
+
+      if (!data.user) {
+        setError("Login succeeded but user data was missing.");
         return;
       }
 
@@ -62,22 +82,13 @@ export default function Login() {
         return;
       }
 
-      if (!data.token?.trim() || typeof data.token !== "string") {
-        setError("Login succeeded but no session token was returned.");
-        return;
-      }
-      if (!data.refreshToken?.trim() || typeof data.refreshToken !== "string") {
-        setError("Login succeeded but no refresh token was returned.");
-        return;
-      }
-
-      const sessionResult = await establishServerSession(data.token, data.refreshToken);
-      if (!sessionResult.ok) {
-        setError(sessionResult.error);
-        return;
-      }
-
-      saveAuthUser(data.user);
+      saveAuthUser({
+        id: data.user.id ?? 0,
+        name: data.user.name ?? "",
+        email: data.user.email ?? values.email,
+        isApproved: true,
+        isAdmin: Boolean(data.user.isAdmin),
+      });
       router.push("/");
       router.refresh();
     } catch {
@@ -86,10 +97,7 @@ export default function Login() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-background p-4 font-sans selection:bg-indigo-500/30">
-      <div className="absolute right-4 top-4">
-        <ThemeToggle />
-      </div>
+    <div className="flex min-h-screen items-center justify-center bg-background p-4 font-sans selection:bg-indigo-500/30">
       <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-lg">
         <div className="mb-8 text-center">
           <h1 className="bg-gradient-to-r from-indigo-500 to-cyan-500 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent">
@@ -100,11 +108,11 @@ export default function Login() {
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/50 text-red-400 px-4 py-3 rounded-lg text-sm text-center">
+            {error ? (
+              <div className="rounded-lg border border-red-500/50 bg-red-500/10 px-4 py-3 text-center text-sm text-red-400">
                 {error}
               </div>
-            )}
+            ) : null}
 
             <FormField
               control={form.control}
@@ -146,10 +154,10 @@ export default function Login() {
               )}
             />
 
-            <div className="text-right -mt-2">
+            <div className="-mt-2 text-right">
               <Link
                 href="/forgot-password"
-                className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors font-medium"
+                className="text-sm font-medium text-indigo-400 transition-colors hover:text-indigo-300"
               >
                 Forgot password?
               </Link>
@@ -159,7 +167,7 @@ export default function Login() {
               type="submit"
               size="lg"
               disabled={form.formState.isSubmitting}
-              className="w-full h-11 bg-indigo-500 text-white hover:bg-indigo-600 focus-visible:ring-indigo-500/50"
+              className="h-11 w-full bg-indigo-500 text-white hover:bg-indigo-600 focus-visible:ring-indigo-500/50"
             >
               {form.formState.isSubmitting ? "Signing in..." : "Sign In"}
             </Button>
@@ -170,7 +178,7 @@ export default function Login() {
           Don&apos;t have an account?{" "}
           <Link
             href="/register"
-            className="text-indigo-400 hover:text-indigo-300 transition-colors font-medium"
+            className="font-medium text-indigo-400 transition-colors hover:text-indigo-300"
           >
             Register here
           </Link>

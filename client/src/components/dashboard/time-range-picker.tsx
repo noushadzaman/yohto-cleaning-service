@@ -83,8 +83,8 @@ function TimeColumn({ items, selected, open, onSelect }: TimeColumnProps) {
             className={cn(
               "block w-full rounded-md px-3 py-1.5 text-center text-sm tabular-nums transition-colors",
               isSelected
-                ? "bg-blue-600 text-white"
-                : "text-neutral-200 hover:bg-neutral-700"
+                ? "bg-indigo-500 text-white"
+                : "text-foreground hover:bg-accent"
             )}
           >
             {item}
@@ -121,7 +121,7 @@ function TimeField({ id, value, onChange, disabled, ariaLabel }: TimeFieldProps)
           maxLength={5}
           pattern="([01][0-9]|2[0-3]):[0-5][0-9]"
           onChange={(e) => onChange(normalizeTimeInput(e.target.value))}
-          className="border-neutral-700 bg-neutral-800/60 pr-9 text-neutral-100 tabular-nums"
+          className="pr-9 tabular-nums"
           aria-label={ariaLabel}
         />
         <PopoverPrimitive.Trigger asChild>
@@ -129,7 +129,7 @@ function TimeField({ id, value, onChange, disabled, ariaLabel }: TimeFieldProps)
             type="button"
             disabled={disabled}
             aria-label={`${ariaLabel} picker`}
-            className="absolute top-1/2 right-2 -translate-y-1/2 text-neutral-400 transition-colors hover:text-neutral-100 disabled:pointer-events-none disabled:opacity-50"
+            className="absolute top-1/2 right-2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground disabled:pointer-events-none disabled:opacity-50"
           >
             <Clock className="size-4" aria-hidden />
           </button>
@@ -138,7 +138,7 @@ function TimeField({ id, value, onChange, disabled, ariaLabel }: TimeFieldProps)
       <PopoverPrimitive.Content
         align="start"
         sideOffset={6}
-        className="z-50 rounded-lg border border-neutral-700 bg-neutral-900 p-1 shadow-xl"
+        className="z-50 rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-xl"
       >
         <div className="flex gap-1">
           <TimeColumn
@@ -147,7 +147,7 @@ function TimeField({ id, value, onChange, disabled, ariaLabel }: TimeFieldProps)
             open={open}
             onSelect={(h) => onChange(`${h}:${minute ?? "00"}`)}
           />
-          <div className="my-1 w-px bg-neutral-700" aria-hidden />
+          <div className="my-1 w-px bg-border" aria-hidden />
           <TimeColumn
             items={MINUTES}
             selected={minute}
@@ -182,7 +182,7 @@ export function TimeRangePicker({
           ariaLabel="Shift start (24-hour)"
           onChange={(start) => onChange({ ...value, start })}
         />
-        <span className="text-sm text-neutral-500" aria-hidden>
+        <span className="text-sm text-muted-foreground" aria-hidden>
           to
         </span>
         <TimeField

@@ -49,12 +49,10 @@ export function TaskDialog({
 }: TaskDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[90dvh] flex-col border-neutral-800 bg-neutral-900 text-neutral-100 sm:max-w-lg">
+      <DialogContent className="flex max-h-[90dvh] flex-col sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="text-neutral-100">
-            {editingTaskId != null ? "Update task" : "Add Task"}
-          </DialogTitle>
-          <DialogDescription className="text-neutral-400">
+          <DialogTitle>{editingTaskId != null ? "Update task" : "Add Task"}</DialogTitle>
+          <DialogDescription>
             {selectedTaskUser
               ? editingTaskId != null
                 ? `Edit task for ${selectedTaskUser.userName}. Date comes from the cell you selected.`
@@ -65,137 +63,130 @@ export function TaskDialog({
 
         <form onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-1 pb-1">
-          <div className="space-y-2">
-            <Label>Date</Label>
-            <div
-              className="flex h-8 w-full items-center rounded-lg border border-neutral-700 bg-neutral-800/40 px-2.5 text-sm text-neutral-200"
-              aria-live="polite"
-            >
-              {selectedTaskUser?.dateLabel ?? "—"}
+            <div className="space-y-2">
+              <Label>Date</Label>
+              <div
+                className="flex h-8 w-full items-center rounded-lg border border-input bg-muted px-2.5 text-sm text-foreground"
+                aria-live="polite"
+              >
+                {selectedTaskUser?.dateLabel ?? "—"}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Set from the row you selected; it cannot be changed here.
+              </p>
             </div>
-            <p className="text-xs text-neutral-500">
-              Set from the row you selected; it cannot be changed here.
-            </p>
-          </div>
 
-          <TimeRangePicker
-            idPrefix="task-shift"
-            value={taskShift}
-            onChange={onTaskShiftChange}
-            disabled={isSubmittingTask}
-          />
-
-          <div className="space-y-2">
-            <Label htmlFor="companyName">Company Name</Label>
-            <Input
-              id="companyName"
-              required
-              value={taskForm.companyName}
-              onChange={(e) =>
-                onTaskFormChange((prev) => ({ ...prev, companyName: e.target.value }))
-              }
-              className="border-neutral-700 bg-neutral-800/60 text-neutral-100"
+            <TimeRangePicker
+              idPrefix="task-shift"
+              value={taskShift}
+              onChange={onTaskShiftChange}
+              disabled={isSubmittingTask}
             />
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="taskText">Task</Label>
-            {open ? (
-              <RichTextEditorLazy
-                id="taskText"
-                value={taskForm.task}
-                onChange={(task) =>
-                  onTaskFormChange((prev) => ({ ...prev, task }))
+            <div className="space-y-2">
+              <Label htmlFor="companyName">Company Name</Label>
+              <Input
+                id="companyName"
+                required
+                value={taskForm.companyName}
+                onChange={(e) =>
+                  onTaskFormChange((prev) => ({ ...prev, companyName: e.target.value }))
                 }
-                placeholder="Describe the task"
-                disabled={isSubmittingTask}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="taskText">Task</Label>
+              {open ? (
+                <RichTextEditorLazy
+                  id="taskText"
+                  value={taskForm.task}
+                  onChange={(task) =>
+                    onTaskFormChange((prev) => ({ ...prev, task }))
+                  }
+                  placeholder="Describe the task"
+                  disabled={isSubmittingTask}
+                />
+              ) : null}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="carName">Car Name</Label>
+              <Input
+                id="carName"
+                required
+                value={taskForm.carName}
+                onChange={(e) =>
+                  onTaskFormChange((prev) => ({ ...prev, carName: e.target.value }))
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label id="transport-type-label">Transport</Label>
+              <div
+                role="radiogroup"
+                aria-labelledby="transport-type-label"
+                className="flex flex-wrap items-center gap-3"
+              >
+                {TRANSPORT_TYPES.map((t) => {
+                  const meta = TRANSPORT_TYPE_META[t];
+                  const selected = taskForm.transportType === t;
+                  return (
+                    <button
+                      key={t}
+                      type="button"
+                      role="radio"
+                      aria-checked={selected}
+                      title={meta.label}
+                      onClick={() =>
+                        onTaskFormChange((prev) => ({ ...prev, transportType: t }))
+                      }
+                      className={cn(
+                        "rounded-full p-1 transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                        selected &&
+                          "ring-2 ring-indigo-400 ring-offset-2 ring-offset-background"
+                      )}
+                    >
+                      <span className={cn("block size-3 rounded-full", meta.dotClass)} />
+                      <span className="sr-only">{meta.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="location">Location URL</Label>
+              {open ? (
+                <RichTextEditorLazy
+                  id="location"
+                  value={taskForm.location}
+                  onChange={(location) =>
+                    onTaskFormChange((prev) => ({ ...prev, location }))
+                  }
+                  placeholder="https://example.com/location"
+                  disabled={isSubmittingTask}
+                />
+              ) : null}
+              <p className="text-xs text-muted-foreground">
+                Enter a URL or use the link tool; formatting and colors are saved with the task.
+              </p>
+            </div>
+
+            {taskSubmitError ? (
+              <p className="text-sm text-destructive">{taskSubmitError}</p>
             ) : null}
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="carName">Car Name</Label>
-            <Input
-              id="carName"
-              required
-              value={taskForm.carName}
-              onChange={(e) =>
-                onTaskFormChange((prev) => ({ ...prev, carName: e.target.value }))
-              }
-              className="border-neutral-700 bg-neutral-800/60 text-neutral-100"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label id="transport-type-label">Transport</Label>
-            <div
-              role="radiogroup"
-              aria-labelledby="transport-type-label"
-              className="flex flex-wrap items-center gap-3"
-            >
-              {TRANSPORT_TYPES.map((t) => {
-                const meta = TRANSPORT_TYPE_META[t];
-                const selected = taskForm.transportType === t;
-                return (
-                  <button
-                    key={t}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    title={meta.label}
-                    onClick={() =>
-                      onTaskFormChange((prev) => ({ ...prev, transportType: t }))
-                    }
-                    className={cn(
-                      "rounded-full p-1 transition-shadow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-900",
-                      selected &&
-                        "ring-2 ring-indigo-400 ring-offset-2 ring-offset-neutral-900"
-                    )}
-                  >
-                    <span className={cn("block size-3 rounded-full", meta.dotClass)} />
-                    <span className="sr-only">{meta.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="location">Location URL</Label>
-            {open ? (
-              <RichTextEditorLazy
-                id="location"
-                value={taskForm.location}
-                onChange={(location) =>
-                  onTaskFormChange((prev) => ({ ...prev, location }))
-                }
-                placeholder="https://example.com/location"
-                disabled={isSubmittingTask}
-              />
-            ) : null}
-            <p className="text-xs text-neutral-500">
-              Enter a URL or use the link tool; formatting and colors are saved with the task.
-            </p>
-          </div>
-
-          {taskSubmitError ? (
-            <p className="text-sm text-red-400">{taskSubmitError}</p>
-          ) : null}
-          </div>
-
-          <DialogFooter className="-mx-4 -mb-4 mt-4 rounded-b-lg border-t border-neutral-800 bg-neutral-900/80 p-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="border-neutral-700 text-neutral-200 hover:bg-neutral-800 hover:text-white"
-            >
+          <DialogFooter className="-mx-4 -mb-4 mt-4">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={isSubmittingTask || !selectedTaskUser}
-              className="bg-indigo-500 text-white hover:bg-indigo-400"
+              className="bg-indigo-500 text-white hover:bg-indigo-600"
             >
               {isSubmittingTask
                 ? "Saving..."

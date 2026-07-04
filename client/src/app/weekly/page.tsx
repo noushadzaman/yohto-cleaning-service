@@ -11,6 +11,7 @@ import {
 } from "@/features/dashboard/week-utils";
 import { mergeTaskDetailsIntoRowList } from "@/features/dashboard/weekly-merge";
 import { createBlankWeeklyRow } from "@/features/dashboard/weekly-showcase-rows";
+import { getVisibleWeeklyColumnHeaders } from "@/features/dashboard/weekly-showcase-types";
 
 export const dynamic = "force-dynamic";
 
@@ -33,8 +34,18 @@ export default async function WeeklyPage({ searchParams }: WeeklyPageProps) {
     .filter((member) => !member.isAdmin)
     .map((member) => ({ id: member.id, name: member.name }));
 
-  const seedRows = [createBlankWeeklyRow(year, weekNumber, "1")];
-  const rows = mergeTaskDetailsIntoRowList(year, weekNumber, seedRows, detailRows);
+  const visibleColumnKeys = getVisibleWeeklyColumnHeaders(columnHeaders).map(
+    (header) => header.columnKey
+  );
+
+  const seedRows = [createBlankWeeklyRow(year, weekNumber, "1", visibleColumnKeys)];
+  const rows = mergeTaskDetailsIntoRowList(
+    year,
+    weekNumber,
+    seedRows,
+    detailRows,
+    visibleColumnKeys
+  );
 
   return (
     <WeeklyShowcaseClient

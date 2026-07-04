@@ -9,6 +9,7 @@ type UseDashboardColumnsParams = {
   users: User[];
   taskLookup: Map<string, TaskRecord>;
   canManageTasks: boolean;
+  currentUserId?: number | null;
   openTaskDialog: (
     selectedUserId: number,
     selectedUserName: string,
@@ -25,6 +26,7 @@ export function useDashboardColumns({
   users,
   taskLookup,
   canManageTasks,
+  currentUserId = null,
   openTaskDialog,
   openEditTaskDialog,
 }: UseDashboardColumnsParams): ColumnDef<DashboardRow>[] {
@@ -66,7 +68,20 @@ export function useDashboardColumns({
       },
       ...users.map((currentUser) => ({
         id: `user-${currentUser.id}`,
-        header: currentUser.name,
+        header: () => {
+          const isSelf = currentUserId === currentUser.id;
+          return (
+            <span
+              className={
+                isSelf
+                  ? "inline-block rounded-md bg-indigo-500/15 px-2 py-0.5 font-bold text-indigo-600 ring-1 ring-indigo-500/30 dark:text-indigo-300"
+                  : undefined
+              }
+            >
+              {currentUser.name}
+            </span>
+          );
+        },
         cell: ({ row }: { row: { original: DashboardRow } }) => {
           const existing = taskLookup.get(
             taskCellKey(currentUser.id, row.original.dateNum)
@@ -91,24 +106,28 @@ export function useDashboardColumns({
           }
 
           return (
-            <button
-              type="button"
-              className="flex h-full min-h-[5.5rem] w-full items-center justify-center text-neutral-500 transition-colors hover:text-indigo-200"
-              aria-label={`Add task for ${currentUser.name}`}
-              onClick={() =>
-                openTaskDialog(currentUser.id, currentUser.name, row.original)
-              }
-            >
-              <CirclePlus
-                className="h-5 w-5 shrink-0"
-                strokeWidth={1.5}
-                aria-hidden
-              />
-            </button>
+            <div className="relative min-h-40 h-full w-full">
+              <div className="absolute inset-0 flex items-center justify-center">
+                <button
+                  type="button"
+                  className="inline-flex size-10 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-indigo-600 dark:hover:text-indigo-300"
+                  aria-label={`Add task for ${currentUser.name}`}
+                  onClick={() =>
+                    openTaskDialog(currentUser.id, currentUser.name, row.original)
+                  }
+                >
+                  <CirclePlus
+                    className="size-5 shrink-0"
+                    strokeWidth={1.5}
+                    aria-hidden
+                  />
+                </button>
+              </div>
+            </div>
           );
         },
       })),
     ],
-    [users, canManageTasks, openTaskDialog, openEditTaskDialog, taskLookup]
+    [users, canManageTasks, currentUserId, openTaskDialog, openEditTaskDialog, taskLookup]
   );
 }

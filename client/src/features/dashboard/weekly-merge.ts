@@ -1,14 +1,9 @@
 import { createBlankWeeklyRow } from "./weekly-showcase-rows";
 import {
-  WEEKLY_SHOWCASE_COLUMNS,
+  isWeeklyShowcaseColumnKey,
   type TaskDetailRecord,
-  type WeeklyShowcaseColumnKey,
   type WeeklyShowcaseRow,
 } from "./weekly-showcase-types";
-
-function isColumnKey(value: string): value is WeeklyShowcaseColumnKey {
-  return WEEKLY_SHOWCASE_COLUMNS.some((c) => c.key === value);
-}
 
 /** Same rules as server `parseTaskDetailRowKeyParts` — tolerant of `W` vs `w` and padded weeks. */
 function parseTaskDetailRowKeyParts(
@@ -34,7 +29,8 @@ export function mergeTaskDetailsIntoRowList(
   year: number,
   week: number,
   seedRows: WeeklyShowcaseRow[],
-  details: TaskDetailRecord[]
+  details: TaskDetailRecord[],
+  columnKeys: readonly string[] = []
 ): WeeklyShowcaseRow[] {
   const out = structuredClone(seedRows);
   const byId = new Map(out.map((r) => [r.id, r] as const));
@@ -49,11 +45,11 @@ export function mergeTaskDetailsIntoRowList(
     let row = byId.get(rowKeyNorm);
     if (!row) {
       const suffix = parsed.suffix || "1";
-      row = createBlankWeeklyRow(year, week, suffix);
+      row = createBlankWeeklyRow(year, week, suffix, columnKeys);
       out.push(row);
       byId.set(rowKeyNorm, row);
     }
-    if (!isColumnKey(d.columnKey)) continue;
+    if (!isWeeklyShowcaseColumnKey(d.columnKey)) continue;
     const dateStr = d.date.slice(0, 10);
     row[d.columnKey] = {
       id: d.id,

@@ -1,10 +1,19 @@
 import { hasRichTextContent } from "@/lib/rich-text";
-import { WEEKLY_SHOWCASE_COLUMNS, type WeeklyShowcaseRow } from "./weekly-showcase-types";
+import {
+  getWeeklyRowCell,
+  getVisibleWeeklyColumnHeaders,
+  type WeeklyShowcaseColumnHeader,
+  type WeeklyShowcaseRow,
+} from "./weekly-showcase-types";
 
 /** True if any column has user text (not empty and not the placeholder em dash). */
-export function weeklyRowHasAnyData(row: WeeklyShowcaseRow): boolean {
-  for (const { key } of WEEKLY_SHOWCASE_COLUMNS) {
-    if (hasRichTextContent(row[key].text)) {
+export function weeklyRowHasAnyData(
+  row: WeeklyShowcaseRow,
+  columnHeaders?: WeeklyShowcaseColumnHeader[]
+): boolean {
+  const keys = getVisibleWeeklyColumnHeaders(columnHeaders).map((header) => header.columnKey);
+  for (const key of keys) {
+    if (hasRichTextContent(getWeeklyRowCell(row, key).text)) {
       return true;
     }
   }

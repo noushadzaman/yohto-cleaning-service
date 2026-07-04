@@ -176,6 +176,7 @@ export default function DashboardClient({
     users,
     taskLookup,
     canManageTasks: Boolean(user?.isAdmin),
+    currentUserId: user?.id ?? null,
     openTaskDialog,
     openEditTaskDialog,
   });
@@ -386,12 +387,19 @@ export default function DashboardClient({
       onToggleApproval={toggleApproval}
       onDeleteUser={removeUser}
       onLogout={handleLogout}
-      title="Employee Dashboard"
+      title="Extra team Dashboard"
       subtitle={`Manage your team's availability and schedule for ${monthLabel}.`}
+      logoSrc="/pink_logo_rgb.webp"
+      logoAlt="Extra team"
     >
       <MonthlyMonthPagination year={year} monthNumber={monthNumber} />
 
-      <DashboardDataTable table={table} users={users} summaries={summaries} />
+      <DashboardDataTable
+        table={table}
+        users={users}
+        summaries={summaries}
+        currentUserId={user?.id ?? null}
+      />
 
       <TaskDialog
         open={isTaskDialogOpen}

@@ -3,11 +3,12 @@
 import type { FormEvent } from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
+import { Plus, Settings2 } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { WeeklyWeekPagination } from "@/components/dashboard/weekly-week-pagination";
 import { useDashboardShell } from "@/components/dashboard/use-dashboard-shell";
 import { WeeklyCellDialog } from "@/components/dashboard/weekly-cell-dialog";
+import { WeeklyColumnsManageDialog } from "@/components/dashboard/weekly-columns-manage-dialog";
 import { WeeklyColumnHeaderCell } from "@/components/dashboard/weekly-column-header-cell";
 import { WeeklyColumnHeaderDialog } from "@/components/dashboard/weekly-column-header-dialog";
 import { WeeklyTaskDetailCell } from "@/components/dashboard/weekly-task-detail-cell";
@@ -21,7 +22,13 @@ import {
 } from "@/components/dashboard/weekly-weekday-picker";
 import { Button } from "@/components/ui/button";
 import { isRichTextEmpty } from "@/lib/rich-text";
-import { upsertWeeklyShowcaseColumnHeader, upsertWeeklyTaskDetail } from "@/features/dashboard/actions";
+import {
+  createWeeklyShowcaseColumn,
+  removeWeeklyShowcaseColumn,
+  restoreWeeklyShowcaseColumn,
+  upsertWeeklyShowcaseColumnHeader,
+  upsertWeeklyTaskDetail,
+} from "@/features/dashboard/actions";
 import {
   maxRowSuffixForWeek,
   weeklyRowHasAnyData,
@@ -30,6 +37,9 @@ import { createBlankWeeklyRow } from "@/features/dashboard/weekly-showcase-rows"
 import {
   buildWeeklyShowcaseColumns,
   DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS,
+  getVisibleWeeklyColumnHeaders,
+  getWeeklyRowCell,
+  type TaskDetail,
   type WeeklyShowcaseColumnHeader,
   type WeeklyShowcaseColumnKey,
   type WeeklyShowcaseRow,
@@ -77,6 +87,14 @@ export default function WeeklyShowcaseClient({
   const [columnHeaders, setColumnHeaders] =
     useState<WeeklyShowcaseColumnHeader[]>(initialColumnHeaders);
   const columns = buildWeeklyShowcaseColumns(columnHeaders);
+  const visibleColumnKeys = getVisibleWeeklyColumnHeaders(columnHeaders).map(
+    (header) => header.columnKey
+  );
+  const hiddenColumnHeaders = columnHeaders.filter((header) => header.isVisible === false);
+  const [columnsDialogOpen, setColumnsDialogOpen] = useState(false);
+  const [newColumnLabel, setNewColumnLabel] = useState("");
+  const [columnsError, setColumnsError] = useState<string | null>(null);
+  const [isManagingColumns, setIsManagingColumns] = useState(false);
   const [cellTarget, setCellTarget] = useState<CellEditTarget | null>(null);
   const [cellText, setCellText] = useState("");
   const [selectedUserIds, setSelectedUserIds] = useState<number[]>([]);
@@ -133,20 +151,25 @@ export default function WeeklyShowcaseClient({
   const canManageWeeklyRows = Boolean(user?.isAdmin);
 
   const canAddRow =
-    canManageWeeklyRows && rows.length > 0 && weeklyRowHasAnyData(rows[rows.length - 1]);
+    canManageWeeklyRows &&
+    rows.length > 0 &&
+    weeklyRowHasAnyData(rows[rows.length - 1], columnHeaders);
 
   const addLocalRow = useCallback(() => {
     setLocalRows((prev) => {
       if (prev.length === 0) return prev;
       const last = prev[prev.length - 1];
-      if (!weeklyRowHasAnyData(last)) return prev;
+      if (!weeklyRowHasAnyData(last, columnHeaders)) return prev;
       const nextSuffix = maxRowSuffixForWeek(prev, year, weekNumber) + 1;
-      return [...prev, createBlankWeeklyRow(year, weekNumber, String(nextSuffix))];
+      return [
+        ...prev,
+        createBlankWeeklyRow(year, weekNumber, String(nextSuffix), visibleColumnKeys),
+      ];
     });
-  }, [year, weekNumber]);
+  }, [year, weekNumber, columnHeaders, visibleColumnKeys]);
 
   const openCellDialog = useCallback(
-    (target: CellEditTarget, detail: WeeklyShowcaseRow[WeeklyShowcaseColumnKey]) => {
+    (target: CellEditTarget, detail: TaskDetail) => {
       setCellTarget(target);
       if (target.column === "weekdayDate") {
         const raw = detail.text === "—" ? "" : detail.text;
@@ -202,6 +225,8 @@ export default function WeeklyShowcaseClient({
         columnKey: headerTarget.columnKey,
         label,
         headerStyle: "default",
+        isVisible: headerTarget.isVisible,
+        sortOrder: headerTarget.sortOrder,
       });
 
       setIsSavingHeader(false);
@@ -221,6 +246,99 @@ export default function WeeklyShowcaseClient({
       router.refresh();
     },
     [headerTarget, headerLabel, router]
+  );
+
+  const handleColumnsDialogOpenChange = useCallback((open: boolean) => {
+    setColumnsDialogOpen(open);
+    if (!open) {
+      setColumnsError(null);
+      setNewColumnLabel("");
+      setIsManagingColumns(false);
+    }
+  }, []);
+
+  const handleRemoveColumn = useCallback(
+    async (columnKey: WeeklyShowcaseColumnKey) => {
+      setIsManagingColumns(true);
+      setColumnsError(null);
+
+      const header = columnHeaders.find((item) => item.columnKey === columnKey);
+      const result = await removeWeeklyShowcaseColumn(columnKey, header);
+      setIsManagingColumns(false);
+
+      if (!result.ok) {
+        setColumnsError(result.error);
+        return;
+      }
+
+      setColumnHeaders((prev) => {
+        if (result.hidden) {
+          return prev.map((header) =>
+            header.columnKey === columnKey ? { ...header, isVisible: false } : header
+          );
+        }
+        return prev.filter((header) => header.columnKey !== columnKey);
+      });
+      router.refresh();
+    },
+    [columnHeaders, router]
+  );
+
+  const handleRestoreColumn = useCallback(
+    async (columnKey: WeeklyShowcaseColumnKey) => {
+      setIsManagingColumns(true);
+      setColumnsError(null);
+
+      const header = columnHeaders.find((item) => item.columnKey === columnKey);
+      if (!header) {
+        setIsManagingColumns(false);
+        setColumnsError("Column header data is missing.");
+        return;
+      }
+
+      const result = await restoreWeeklyShowcaseColumn(header);
+      setIsManagingColumns(false);
+
+      if (!result.ok) {
+        setColumnsError(result.error);
+        return;
+      }
+
+      setColumnHeaders((prev) =>
+        prev.map((header) =>
+          header.columnKey === result.header.columnKey ? result.header : header
+        )
+      );
+      router.refresh();
+    },
+    [columnHeaders, router]
+  );
+
+  const handleAddColumn = useCallback(
+    async (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const label = newColumnLabel.trim();
+      if (!label) {
+        setColumnsError("Please enter a header label for the new column.");
+        return;
+      }
+
+      setIsManagingColumns(true);
+      setColumnsError(null);
+
+      const result = await createWeeklyShowcaseColumn({ label });
+      setIsManagingColumns(false);
+
+      if (!result.ok) {
+        setColumnsError(result.error);
+        return;
+      }
+
+      setColumnHeaders((prev) => [...prev, result.header]);
+      setNewColumnLabel("");
+      router.refresh();
+    },
+    [newColumnLabel, router]
   );
 
   const handleCellDialogOpenChange = useCallback((open: boolean) => {
@@ -256,7 +374,7 @@ export default function WeeklyShowcaseClient({
       const row = localRows.find((r) => r.id === cellTarget.rowId);
       const weekdayLabel = isWeekdayColumn
         ? weekdayValue
-        : extractWeekdayLabelForDate(row?.weekdayDate.text?.trim() ?? "");
+        : extractWeekdayLabelForDate(getWeeklyRowCell(row ?? { id: "" }, "weekdayDate").text?.trim() ?? "");
 
       setIsSavingCell(true);
       setCellError(null);
@@ -325,6 +443,8 @@ export default function WeeklyShowcaseClient({
           ? `Calendar week ${weekNumber}, ${year} (${weekRangeLabel})`
           : `Calendar week ${weekNumber}, ${year}`
       }
+      logoSrc="/pink_logo_rgb.webp"
+      logoAlt="Extra team"
     >
       <WeeklyWeekPagination year={year} weekNumber={weekNumber} />
 
@@ -345,6 +465,15 @@ export default function WeeklyShowcaseClient({
           >
             <Plus className="mr-1.5 size-4" aria-hidden />
             Add row
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setColumnsDialogOpen(true)}
+          >
+            <Settings2 className="mr-1.5 size-4" aria-hidden />
+            Manage columns
           </Button>
           {!canAddRow && rows.length > 0 ? (
             <span className="text-xs text-muted-foreground">
@@ -369,13 +498,18 @@ export default function WeeklyShowcaseClient({
                       canEdit={canManageWeeklyRows}
                       isActive={activeHeaderKey === col.key}
                       onActivate={() => toggleHeaderActive(col.key)}
-                      onEdit={() =>
-                        openHeaderDialog({
-                          columnKey: col.key,
-                          label: col.label,
-                          headerStyle: col.headerStyle,
-                        })
-                      }
+                      onEdit={() => {
+                        const header = columnHeaders.find((item) => item.columnKey === col.key);
+                        openHeaderDialog(
+                          header ?? {
+                            columnKey: col.key,
+                            label: col.label,
+                            headerStyle: col.headerStyle,
+                            isVisible: true,
+                            sortOrder: 0,
+                          }
+                        );
+                      }}
                     />
                   ))}
                 </tr>
@@ -397,9 +531,9 @@ export default function WeeklyShowcaseClient({
                       className="group transition-colors hover:bg-muted/50"
                     >
                       {columns.map((col) => (
-                        <td key={col.key} className={col.tdClass}>
+                        <td key={col.key} className={`${col.tdClass} h-px`}>
                           <WeeklyTaskDetailCell
-                            detail={row[col.key]}
+                            detail={getWeeklyRowCell(row, col.key)}
                             canEdit={canManageWeeklyRows}
                             enableLink={col.key !== "weekdayDate"}
                             isWeekdayDate={col.key === "weekdayDate"}
@@ -412,7 +546,7 @@ export default function WeeklyShowcaseClient({
                                   column: col.key,
                                   columnLabel: col.label,
                                 },
-                                row[col.key]
+                                getWeeklyRowCell(row, col.key)
                               )
                             }
                           />
@@ -459,6 +593,20 @@ export default function WeeklyShowcaseClient({
           error={headerError}
           isSubmitting={isSavingHeader}
           onSubmit={handleHeaderSubmit}
+        />
+
+        <WeeklyColumnsManageDialog
+          open={columnsDialogOpen}
+          onOpenChange={handleColumnsDialogOpenChange}
+          visibleHeaders={getVisibleWeeklyColumnHeaders(columnHeaders)}
+          hiddenHeaders={hiddenColumnHeaders}
+          newColumnLabel={newColumnLabel}
+          onNewColumnLabelChange={setNewColumnLabel}
+          error={columnsError}
+          isSubmitting={isManagingColumns}
+          onRemoveColumn={handleRemoveColumn}
+          onRestoreColumn={handleRestoreColumn}
+          onAddColumn={handleAddColumn}
         />
     </DashboardShell>
   );

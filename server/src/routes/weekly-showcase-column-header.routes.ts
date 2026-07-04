@@ -19,4 +19,28 @@ router.put(
   headerController.upsertWeeklyShowcaseColumnHeader,
 );
 
+router.post(
+  '/column-headers',
+  authenticate,
+  requireApproved,
+  requireAdmin,
+  headerController.createWeeklyShowcaseColumn,
+);
+
+router.patch(
+  '/column-headers/:columnKey',
+  authenticate,
+  requireApproved,
+  requireAdmin,
+  headerController.restoreWeeklyShowcaseColumn,
+);
+
+router.delete(
+  '/column-headers/:columnKey',
+  authenticate,
+  requireApproved,
+  requireAdmin,
+  headerController.removeWeeklyShowcaseColumn,
+);
+
 export default router;

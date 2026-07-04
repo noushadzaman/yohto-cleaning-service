@@ -9,21 +9,29 @@ export type TaskDetail = {
   text: string;
 };
 
+export const BUILT_IN_WEEKLY_COLUMN_KEYS = [
+  "title",
+  "weekdayDate",
+  "customer",
+  "pointOfBusiness",
+  "keysSandra",
+  "alarmSandra",
+  "instructions",
+  "specialEquipmentDetergent",
+  "maxTimeHoursInclusiveOfDriving",
+] as const;
+
+export type BuiltInWeeklyColumnKey = (typeof BUILT_IN_WEEKLY_COLUMN_KEYS)[number];
+
+export type CustomWeeklyColumnKey = `custom_${string}`;
+
+export type WeeklyShowcaseColumnKey = BuiltInWeeklyColumnKey | CustomWeeklyColumnKey;
+
 /** Row model for `/weekly` — each column is a `TaskDetail`, not main-dashboard `TaskRecord`. */
 export type WeeklyShowcaseRow = {
   id: string;
-  title: TaskDetail;
-  weekdayDate: TaskDetail;
-  customer: TaskDetail;
-  pointOfBusiness: TaskDetail;
-  keysSandra: TaskDetail;
-  alarmSandra: TaskDetail;
-  instructions: TaskDetail;
-  specialEquipmentDetergent: TaskDetail;
-  maxTimeHoursInclusiveOfDriving: TaskDetail;
+  [key: string]: TaskDetail | string;
 };
-
-export type WeeklyShowcaseColumnKey = Exclude<keyof WeeklyShowcaseRow, "id">;
 
 export type WeeklyShowcaseHeaderStyle = "default" | "keysSandra" | "alarmSandra";
 
@@ -31,6 +39,8 @@ export type WeeklyShowcaseColumnHeader = {
   columnKey: WeeklyShowcaseColumnKey;
   label: string;
   headerStyle: WeeklyShowcaseHeaderStyle;
+  isVisible: boolean;
+  sortOrder: number;
 };
 
 export type WeeklyShowcaseColumn = {
@@ -48,7 +58,7 @@ const WEEKLY_TH_BASE =
 const TD_BORDER = "border-border";
 
 const TD_LAYOUT: Record<
-  WeeklyShowcaseColumnKey,
+  BuiltInWeeklyColumnKey,
   {
     thMinWidthClass: string;
     tdMinWidthClass: string;
@@ -114,27 +124,64 @@ const TD_LAYOUT: Record<
   },
 };
 
+const CUSTOM_COLUMN_LAYOUT = {
+  thMinWidthClass: "min-w-[12rem]",
+  tdMinWidthClass: "min-w-[12rem]",
+  tdClass: `border-b border-r ${TD_BORDER} p-0 align-top text-foreground`,
+  contentAlign: "left" as const,
+};
+
 export const DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS: WeeklyShowcaseColumnHeader[] = [
-  { columnKey: "title", label: "Title", headerStyle: "default" },
-  { columnKey: "weekdayDate", label: "Weekday / date", headerStyle: "default" },
-  { columnKey: "customer", label: "Customer", headerStyle: "default" },
+  { columnKey: "title", label: "Title", headerStyle: "default", isVisible: true, sortOrder: 0 },
+  {
+    columnKey: "weekdayDate",
+    label: "Weekday / date",
+    headerStyle: "default",
+    isVisible: true,
+    sortOrder: 1,
+  },
+  { columnKey: "customer", label: "Customer", headerStyle: "default", isVisible: true, sortOrder: 2 },
   {
     columnKey: "pointOfBusiness",
     label: "Point of business / exact work area",
     headerStyle: "default",
+    isVisible: true,
+    sortOrder: 3,
   },
-  { columnKey: "keysSandra", label: "Keys Sandra fills in", headerStyle: "default" },
-  { columnKey: "alarmSandra", label: "Alarm Sandra fills in", headerStyle: "default" },
-  { columnKey: "instructions", label: "Instructions", headerStyle: "default" },
+  {
+    columnKey: "keysSandra",
+    label: "Keys Sandra fills in",
+    headerStyle: "default",
+    isVisible: true,
+    sortOrder: 4,
+  },
+  {
+    columnKey: "alarmSandra",
+    label: "Alarm Sandra fills in",
+    headerStyle: "default",
+    isVisible: true,
+    sortOrder: 5,
+  },
+  {
+    columnKey: "instructions",
+    label: "Instructions",
+    headerStyle: "default",
+    isVisible: true,
+    sortOrder: 6,
+  },
   {
     columnKey: "specialEquipmentDetergent",
     label: "Special equipment / detergent",
     headerStyle: "default",
+    isVisible: true,
+    sortOrder: 7,
   },
   {
     columnKey: "maxTimeHoursInclusiveOfDriving",
     label: "Max time (h) inclusive of driving",
     headerStyle: "default",
+    isVisible: true,
+    sortOrder: 8,
   },
 ];
 
@@ -151,34 +198,98 @@ const HEADER_STYLE_SET = new Set<string>(
   WEEKLY_SHOWCASE_HEADER_STYLE_OPTIONS.map((option) => option.value)
 );
 
+export function isCustomWeeklyColumnKey(
+  value: string
+): value is CustomWeeklyColumnKey {
+  return /^custom_[a-z0-9]{8,32}$/i.test(value);
+}
+
+export function isBuiltInWeeklyColumnKey(
+  value: string
+): value is BuiltInWeeklyColumnKey {
+  return (BUILT_IN_WEEKLY_COLUMN_KEYS as readonly string[]).includes(value);
+}
+
+export function isWeeklyShowcaseColumnKey(
+  value: string
+): value is WeeklyShowcaseColumnKey {
+  return isBuiltInWeeklyColumnKey(value) || isCustomWeeklyColumnKey(value);
+}
+
 function normalizeHeaderStyle(value: string): WeeklyShowcaseHeaderStyle {
   return HEADER_STYLE_SET.has(value) ? (value as WeeklyShowcaseHeaderStyle) : "default";
 }
 
-function buildThClass(columnKey: WeeklyShowcaseColumnKey): string {
-  const layout = TD_LAYOUT[columnKey];
-  const borderSides = layout.isFirst
+function normalizeColumnHeaders(
+  headers: WeeklyShowcaseColumnHeader[] | null | undefined
+): WeeklyShowcaseColumnHeader[] {
+  const source =
+    headers && headers.length > 0 ? headers : DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS;
+  const byKey = new Map(source.map((header) => [header.columnKey, header]));
+  const merged: WeeklyShowcaseColumnHeader[] = [];
+
+  DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS.forEach((defaults) => {
+    const saved = byKey.get(defaults.columnKey);
+    merged.push(
+      saved
+        ? {
+            ...saved,
+            isVisible: saved.isVisible !== false,
+            sortOrder: saved.sortOrder ?? defaults.sortOrder,
+          }
+        : defaults
+    );
+  });
+
+  for (const header of source) {
+    if (isCustomWeeklyColumnKey(header.columnKey)) {
+      merged.push({
+        ...header,
+        isVisible: header.isVisible !== false,
+        sortOrder: header.sortOrder ?? merged.length,
+      });
+    }
+  }
+
+  return merged.sort(
+    (a, b) => a.sortOrder - b.sortOrder || a.columnKey.localeCompare(b.columnKey)
+  );
+}
+
+function getColumnLayout(columnKey: WeeklyShowcaseColumnKey) {
+  if (isBuiltInWeeklyColumnKey(columnKey)) {
+    return TD_LAYOUT[columnKey];
+  }
+  return CUSTOM_COLUMN_LAYOUT;
+}
+
+function buildThClass(columnKey: WeeklyShowcaseColumnKey, isFirst: boolean): string {
+  const layout = getColumnLayout(columnKey);
+  const borderSides = isFirst
     ? `border-b border-l border-r border-t ${TD_BORDER}`
     : `border-b border-r border-t ${TD_BORDER}`;
   return `${layout.thMinWidthClass} ${borderSides} ${WEEKLY_TH_BASE}`;
 }
 
-export function buildWeeklyShowcaseColumns(
-  headers: WeeklyShowcaseColumnHeader[] | null | undefined = DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS,
-): WeeklyShowcaseColumn[] {
-  const resolvedHeaders =
-    headers && headers.length > 0 ? headers : DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS;
-  const byKey = new Map(resolvedHeaders.map((header) => [header.columnKey, header]));
+export function getVisibleWeeklyColumnHeaders(
+  headers: WeeklyShowcaseColumnHeader[] | null | undefined = DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS
+): WeeklyShowcaseColumnHeader[] {
+  return normalizeColumnHeaders(headers).filter((header) => header.isVisible !== false);
+}
 
-  return DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS.map((defaults) => {
-    const header = byKey.get(defaults.columnKey) ?? defaults;
-    const layout = TD_LAYOUT[header.columnKey];
+export function buildWeeklyShowcaseColumns(
+  headers: WeeklyShowcaseColumnHeader[] | null | undefined = DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS
+): WeeklyShowcaseColumn[] {
+  const visibleHeaders = getVisibleWeeklyColumnHeaders(headers);
+
+  return visibleHeaders.map((header, index) => {
+    const layout = getColumnLayout(header.columnKey);
     const style = normalizeHeaderStyle(header.headerStyle);
     return {
       key: header.columnKey,
       label: header.label,
       headerStyle: style,
-      thClass: buildThClass(header.columnKey),
+      thClass: buildThClass(header.columnKey, index === 0),
       tdClass: `${layout.tdMinWidthClass} ${layout.tdClass}`,
       contentAlign: layout.contentAlign,
     };
@@ -192,7 +303,19 @@ export const WEEKLY_SHOWCASE_COLUMNS = buildWeeklyShowcaseColumns();
 export type TaskDetailRecord = {
   id: number;
   rowKey: string;
-  columnKey: WeeklyShowcaseColumnKey;
+  columnKey: string;
   date: string;
   text: string;
 };
+
+export function getWeeklyRowCell(row: WeeklyShowcaseRow, columnKey: string): TaskDetail {
+  const value = row[columnKey];
+  if (value && typeof value === "object" && "text" in value) {
+    return value as TaskDetail;
+  }
+  return {
+    id: `${row.id}-${columnKey}`,
+    date: "",
+    text: "—",
+  };
+}

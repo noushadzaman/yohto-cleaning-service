@@ -9,6 +9,8 @@ import {
   LayoutDashboard,
   Loader2,
   LogOut,
+  Moon,
+  Sun,
   Trash2,
   Users,
 } from "lucide-react";
@@ -38,6 +40,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useTheme } from "@/components/theme-provider";
 import {
   Sidebar,
   SidebarContent,
@@ -91,7 +94,10 @@ export function AppSidebar({
   onLogout,
 }: AppSidebarProps) {
   const pathname = usePathname();
-  const { isMobile, setOpen } = useSidebar();
+  const { isMobile, setOpen, state } = useSidebar();
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === "dark";
+  const showExpandedThemeToggle = isMobile || state === "expanded";
   const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null);
   const [usersAccordion, setUsersAccordion] = useState("");
 
@@ -137,11 +143,15 @@ export function AppSidebar({
               className="flex-1 group-data-[collapsible=icon]:hidden"
             >
               <Link href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-500 text-sm font-extrabold text-white">
-                  Y
-                </div>
+                <img
+                  src="/favicon.ico"
+                  alt="Extra team"
+                  width={32}
+                  height={32}
+                  className="size-8 shrink-0 rounded-lg object-contain"
+                />
                 <div className="grid flex-1 text-left leading-tight">
-                  <span className="truncate font-semibold">Yohto</span>
+                  <span className="truncate font-semibold">Extra team</span>
                   <span className="truncate text-xs text-muted-foreground">
                     Team dashboard
                   </span>
@@ -324,9 +334,24 @@ export function AppSidebar({
       </SidebarContent>
 
       <SidebarFooter>
-        <div className="px-2 pb-2 group-data-[collapsible=icon]:hidden">
-          <ThemeToggle showLabel className="w-full justify-start border-sidebar-border" />
-        </div>
+        {showExpandedThemeToggle ? (
+          <div className="px-2 pb-2">
+            <ThemeToggle showLabel className="w-full justify-start border-sidebar-border" />
+          </div>
+        ) : (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip={isDark ? "Light mode" : "Dark mode"}
+                onClick={toggleTheme}
+                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {isDark ? <Sun /> : <Moon />}
+                <span>{isDark ? "Light mode" : "Dark mode"}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>

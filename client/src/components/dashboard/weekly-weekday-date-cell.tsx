@@ -34,11 +34,13 @@ export function WeeklyWeekdayDateCell({
       return (
         <div
           className={cn(
-            "group/cell flex min-h-[5rem] w-full items-center justify-center px-4 py-3 text-muted-foreground",
+            "group/cell relative min-h-[5rem] h-full w-full",
             className
           )}
         >
-          —
+          <div className="absolute inset-0 flex items-center justify-center px-4 py-3 text-muted-foreground">
+            —
+          </div>
         </div>
       );
     }
@@ -46,25 +48,27 @@ export function WeeklyWeekdayDateCell({
     return (
       <div
         className={cn(
-          "group/cell flex min-h-[5rem] w-full items-center justify-center px-4 py-3",
+          "group/cell relative min-h-[5rem] h-full w-full",
           className
         )}
       >
-        <button
-          type="button"
-          className={cn(
-            "rounded-md p-2 text-muted-foreground transition-colors",
-            "hover:bg-accent hover:text-indigo-500 dark:hover:text-indigo-300",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/80"
-          )}
-          aria-label="Add weekday and users"
-          onClick={(e) => {
-            e.stopPropagation();
-            onOpenEdit();
-          }}
-        >
-          <CirclePlus className="size-5 shrink-0" strokeWidth={1.5} aria-hidden />
-        </button>
+        <div className="absolute inset-0 flex items-center justify-center px-4 py-3">
+          <button
+            type="button"
+            className={cn(
+              "inline-flex size-10 items-center justify-center rounded-md text-muted-foreground transition-colors",
+              "hover:bg-accent hover:text-indigo-500 dark:hover:text-indigo-300",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/80"
+            )}
+            aria-label="Add weekday and users"
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenEdit();
+            }}
+          >
+            <CirclePlus className="size-5 shrink-0" strokeWidth={1.5} aria-hidden />
+          </button>
+        </div>
       </div>
     );
   }

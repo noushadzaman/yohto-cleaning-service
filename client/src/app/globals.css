@@ -118,8 +118,11 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
-/* Dashboard table: horizontal scroll only under user columns */
+/* Dashboard table: horizontal scroll for wide months; page scrolls vertically */
 .dashboard-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
   scrollbar-width: thin;
   scrollbar-color: var(--muted-foreground) var(--muted);
 }
