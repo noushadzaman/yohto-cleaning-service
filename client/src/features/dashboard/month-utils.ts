@@ -47,3 +47,17 @@ export function formatCalendarMonthLabel(ref: CalendarMonthRef): string {
 export function isSameCalendarMonth(a: CalendarMonthRef, b: CalendarMonthRef): boolean {
   return a.year === b.year && a.month === b.month;
 }
+
+/** True when year/month/day matches the viewer's local calendar "today". */
+export function isCalendarToday(
+  year: number,
+  month1to12: number,
+  day: number
+): boolean {
+  const now = new Date();
+  return (
+    now.getFullYear() === year &&
+    now.getMonth() + 1 === month1to12 &&
+    now.getDate() === day
+  );
+}

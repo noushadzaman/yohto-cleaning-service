@@ -11,18 +11,34 @@ const trustProxyHops = Number(process.env.TRUST_PROXY ?? '1');
 app.set('trust proxy', Number.isFinite(trustProxyHops) ? trustProxyHops : 1);
 
 const clientOrigin = process.env.CLIENT_ORIGIN ?? 'http://localhost:3000';
-const corsAllowedOrigins = [
-  clientOrigin,
-  'http://192.168.0.169:3000',
-  'https://yohto-cleaning-service-dczi.vercel.app',
-  'https://app.pcsmonthlypla.online',      // Add this
-  'https://api.pcsmonthlypla.online',      // Add this
-  'https://*.pcsmonthlypla.online',  
-];
+
+function isAllowedOrigin(origin: string | undefined): boolean {
+  if (!origin) return true;
+  if (origin === clientOrigin) return true;
+
+  const extra = (process.env.CORS_EXTRA_ORIGINS ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (extra.includes(origin)) return true;
+
+  try {
+    const { hostname } = new URL(origin);
+    return hostname === 'localhost' || hostname.endsWith('.pcsmonthlypla.online');
+  } catch {
+    return false;
+  }
+}
 
 app.use(
   cors({
-    origin: corsAllowedOrigins,
+    origin(origin, callback) {
+      if (isAllowedOrigin(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(null, false);
+    },
     credentials: true,
     allowedHeaders: ['Content-Type', 'Authorization'],
   })

@@ -3,6 +3,7 @@ import {
   fetchApprovedTeamMembers,
   fetchTaskDetailsForWeek,
   fetchTeamMembers,
+  fetchWeeklyShowcaseColumnHeaders,
 } from "@/features/dashboard/server";
 import {
   formatCalendarWeekRange,
@@ -10,6 +11,7 @@ import {
 } from "@/features/dashboard/week-utils";
 import { mergeTaskDetailsIntoRowList } from "@/features/dashboard/weekly-merge";
 import { createBlankWeeklyRow } from "@/features/dashboard/weekly-showcase-rows";
+import { getVisibleWeeklyColumnHeaders } from "@/features/dashboard/weekly-showcase-types";
 
 export const dynamic = "force-dynamic";
 
@@ -22,17 +24,28 @@ export default async function WeeklyPage({ searchParams }: WeeklyPageProps) {
   const { year, week: weekNumber } = resolveWeeklyPageWeek(params.year, params.week);
   const weekRangeLabel = formatCalendarWeekRange({ year, week: weekNumber });
 
-  const [teamMembers, approvedMembers, detailRows] = await Promise.all([
+  const [teamMembers, approvedMembers, detailRows, columnHeaders] = await Promise.all([
     fetchTeamMembers(),
     fetchApprovedTeamMembers(),
     fetchTaskDetailsForWeek(year, weekNumber),
+    fetchWeeklyShowcaseColumnHeaders(),
   ]);
   const users = approvedMembers
     .filter((member) => !member.isAdmin)
     .map((member) => ({ id: member.id, name: member.name }));
 
-  const seedRows = [createBlankWeeklyRow(year, weekNumber, "1")];
-  const rows = mergeTaskDetailsIntoRowList(year, weekNumber, seedRows, detailRows);
+  const visibleColumnKeys = getVisibleWeeklyColumnHeaders(columnHeaders).map(
+    (header) => header.columnKey
+  );
+
+  const seedRows = [createBlankWeeklyRow(year, weekNumber, "1", visibleColumnKeys)];
+  const rows = mergeTaskDetailsIntoRowList(
+    year,
+    weekNumber,
+    seedRows,
+    detailRows,
+    visibleColumnKeys
+  );
 
   return (
     <WeeklyShowcaseClient
@@ -43,6 +56,7 @@ export default async function WeeklyPage({ searchParams }: WeeklyPageProps) {
       initialTeamMembers={teamMembers}
       users={users}
       initialRows={rows}
+      initialColumnHeaders={columnHeaders}
     />
   );
 }

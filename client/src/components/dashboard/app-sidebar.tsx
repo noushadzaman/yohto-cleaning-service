@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   CalendarDays,
   ChevronsUpDown,
+  ClipboardList,
   LayoutDashboard,
   Loader2,
   LogOut,
+  Moon,
+  Sun,
   Trash2,
   Users,
 } from "lucide-react";
@@ -37,6 +40,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { useTheme } from "@/components/theme-provider";
 import {
   Sidebar,
   SidebarContent,
@@ -53,7 +58,6 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { SIDEBAR_DARK_THEME } from "./sidebar-theme";
 
 type AppSidebarProps = {
   user: CurrentUser | null;
@@ -68,6 +72,7 @@ type AppSidebarProps = {
 const NAV_ITEMS = [
   { href: "/", label: "Main dashboard", icon: LayoutDashboard },
   { href: "/weekly", label: "Weekly showcase", icon: CalendarDays },
+  { href: "/my-tasks", label: "My work", adminLabel: "Staffs", icon: ClipboardList },
 ] as const;
 
 function initials(name: string) {
@@ -91,8 +96,37 @@ export function AppSidebar({
   onLogout,
 }: AppSidebarProps) {
   const pathname = usePathname();
-  const { isMobile } = useSidebar();
+  const { isMobile, setOpen, state } = useSidebar();
+  const { theme, toggleTheme } = useTheme();
+  const isDark = theme === "dark";
+  const showExpandedThemeToggle = isMobile || state === "expanded";
   const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null);
+  const [usersAccordion, setUsersAccordion] = useState("");
+
+  const pendingApprovalCount = useMemo(
+    () => manageableMembers.filter((member) => !member.isApproved).length,
+    [manageableMembers]
+  );
+
+  useEffect(() => {
+    if (pendingApprovalCount > 0) {
+      setUsersAccordion("manage-users");
+    }
+  }, [pendingApprovalCount]);
+
+  const openManageUsers = () => {
+    setOpen(true);
+    setUsersAccordion("manage-users");
+  };
+
+  const sortedMembers = useMemo(
+    () =>
+      [...manageableMembers].sort((a, b) => {
+        if (a.isApproved !== b.isApproved) return a.isApproved ? 1 : -1;
+        return a.name.localeCompare(b.name);
+      }),
+    [manageableMembers]
+  );
 
   const confirmDelete = () => {
     if (!memberToDelete) return;
@@ -101,11 +135,7 @@ export function AppSidebar({
   };
 
   return (
-    <Sidebar
-      collapsible="icon"
-      className="border-neutral-800"
-      style={SIDEBAR_DARK_THEME}
-    >
+    <Sidebar collapsible="icon" className="border-sidebar-border">
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem className="flex items-center gap-1">
@@ -116,13 +146,21 @@ export function AppSidebar({
             >
               <Link href="/">
                 <img
-                  src="/logo.jpeg"
-                  alt="PCS - Professional Cleaning Service"
-                  className="h-9 w-auto rounded-md bg-white"
+                  src="/favicon.ico"
+                  alt="Extra team"
+                  width={32}
+                  height={32}
+                  className="size-8 shrink-0 rounded-lg object-contain"
                 />
+                <div className="grid flex-1 text-left leading-tight">
+                  <span className="truncate font-semibold">Extra team</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    Team dashboard
+                  </span>
+                </div>
               </Link>
             </SidebarMenuButton>
-            <SidebarTrigger className="shrink-0 text-neutral-400 hover:bg-sidebar-accent hover:text-white group-data-[collapsible=icon]:mx-auto" />
+            <SidebarTrigger className="shrink-0 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground group-data-[collapsible=icon]:mx-auto" />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
@@ -135,16 +173,18 @@ export function AppSidebar({
               {NAV_ITEMS.map((item) => {
                 const active = pathname === item.href;
                 const Icon = item.icon;
+                const label =
+                  "adminLabel" in item && user?.isAdmin ? item.adminLabel : item.label;
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       asChild
                       isActive={active}
-                      tooltip={item.label}
+                      tooltip={label}
                     >
                       <Link href={item.href}>
                         <Icon />
-                        <span>{item.label}</span>
+                        <span>{label}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -156,84 +196,141 @@ export function AppSidebar({
 
         {user?.isAdmin && (
           <>
-            <SidebarSeparator className="my-2 group-data-[collapsible=icon]:hidden" />
-            <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+            <SidebarSeparator className="my-2" />
+
+            {/* Collapsed: Users icon with pending count badge */}
+            <SidebarGroup className="py-0 group-data-[state=expanded]:hidden">
               <SidebarGroupContent>
-              <Accordion type="single" collapsible>
-                <AccordionItem value="manage-users" className="border-b-0">
-                  <AccordionTrigger className="px-2 py-1.5 text-xs font-medium text-neutral-400 hover:text-neutral-200 hover:no-underline **:data-[slot=accordion-trigger-icon]:text-neutral-400">
-                    <span className="flex items-center">
-                      <Users className="mr-1.5 size-4" />
-                      Manage users
-                    </span>
-                  </AccordionTrigger>
-                  <AccordionContent className="pb-0">
-              <div className="flex flex-col gap-1">
-                {manageableMembers.map((member) => {
-                  const isPending = pendingApprovalIds.has(member.id);
-                  const isDeleting = pendingDeleteIds.has(member.id);
-                  const isBusy = isPending || isDeleting;
-                  return (
-                    <div
-                      key={member.id}
-                      className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-sidebar-accent"
+                <SidebarMenu>
+                  <SidebarMenuItem className="relative">
+                    <SidebarMenuButton
+                      tooltip={
+                        pendingApprovalCount > 0
+                          ? `Manage users (${pendingApprovalCount} pending)`
+                          : "Manage users"
+                      }
+                      onClick={openManageUsers}
                     >
-                      <div className="flex min-w-0 flex-1 flex-col">
-                        <span className="truncate text-sm font-medium">
-                          {member.name}
-                        </span>
-                        <span className="truncate text-xs text-neutral-500">
-                          {member.email}
-                        </span>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        {isBusy ? (
-                          <Loader2
-                            className="size-4 animate-spin text-neutral-400"
-                            aria-hidden
-                          />
+                      <Users />
+                      <span>Manage users</span>
+                    </SidebarMenuButton>
+                    {pendingApprovalCount > 0 ? (
+                      <span
+                        className="pointer-events-none absolute top-0.5 right-0.5 z-10 flex min-h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-amber-500 px-1 text-[9px] font-bold leading-none text-white tabular-nums"
+                        aria-label={`${pendingApprovalCount} pending approval requests`}
+                      >
+                        {pendingApprovalCount}
+                      </span>
+                    ) : null}
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            <SidebarGroup className="py-0 group-data-[state=collapsed]:hidden">
+              <SidebarGroupContent>
+                <Accordion
+                  type="single"
+                  collapsible
+                  value={usersAccordion}
+                  onValueChange={setUsersAccordion}
+                >
+                  <AccordionItem value="manage-users" className="border-b-0">
+                    <AccordionTrigger className="px-2 py-1.5 text-xs font-medium text-muted-foreground hover:bg-sidebar-accent hover:text-foreground hover:no-underline **:data-[slot=accordion-trigger-icon]:text-muted-foreground">
+                      <span className="flex min-w-0 flex-1 items-center gap-1.5">
+                        <Users className="size-4 shrink-0" />
+                        <span className="truncate">Manage users</span>
+                        {pendingApprovalCount > 0 ? (
+                          <span className="inline-flex min-h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold tabular-nums text-white">
+                            {pendingApprovalCount}
+                          </span>
                         ) : null}
-                        <Switch
-                          checked={member.isApproved}
-                          disabled={isBusy}
-                          onCheckedChange={() =>
-                            onToggleApproval(member.id, member.isApproved)
-                          }
-                          className="disabled:cursor-wait disabled:opacity-80"
-                          aria-label={
-                            isPending
-                              ? `Updating ${member.name}'s approval`
-                              : `Toggle ${member.name}'s approval`
-                          }
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          disabled={isBusy || member.isApproved}
-                          onClick={() => setMemberToDelete(member)}
-                          className="text-neutral-400 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
-                          aria-label={`Delete ${member.name}`}
-                          title={
-                            member.isApproved
-                              ? "Unapprove this user before deleting"
-                              : `Delete ${member.name}`
-                          }
-                        >
-                          <Trash2 className="size-4" />
-                        </Button>
+                      </span>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-0">
+                      <div className="flex flex-col gap-1">
+                        {pendingApprovalCount > 0 ? (
+                          <p className="px-2 pb-1 text-xs text-muted-foreground">
+                            {pendingApprovalCount} user{pendingApprovalCount === 1 ? "" : "s"}{" "}
+                            waiting for approval
+                          </p>
+                        ) : null}
+                        {sortedMembers.map((member) => {
+                          const isPending = pendingApprovalIds.has(member.id);
+                          const isDeleting = pendingDeleteIds.has(member.id);
+                          const isBusy = isPending || isDeleting;
+                          return (
+                            <div
+                              key={member.id}
+                              className={`flex items-center justify-between gap-2 rounded-md px-2 py-1.5 hover:bg-sidebar-accent ${
+                                !member.isApproved
+                                  ? "border border-amber-500/30 bg-amber-500/5"
+                                  : ""
+                              }`}
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="truncate text-sm font-medium">
+                                    {member.name}
+                                  </span>
+                                  {!member.isApproved ? (
+                                    <span className="shrink-0 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
+                                      Pending
+                                    </span>
+                                  ) : null}
+                                </div>
+                                <span className="block truncate text-xs text-muted-foreground">
+                                  {member.email}
+                                </span>
+                              </div>
+                              <div className="flex shrink-0 items-center gap-2">
+                                {isBusy ? (
+                                  <Loader2
+                                    className="size-4 animate-spin text-muted-foreground"
+                                    aria-hidden
+                                  />
+                                ) : null}
+                                <Switch
+                                  checked={member.isApproved}
+                                  disabled={isBusy}
+                                  onCheckedChange={() =>
+                                    onToggleApproval(member.id, member.isApproved)
+                                  }
+                                  className="disabled:cursor-wait disabled:opacity-80"
+                                  aria-label={
+                                    isPending
+                                      ? `Updating ${member.name}'s approval`
+                                      : `Toggle ${member.name}'s approval`
+                                  }
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  disabled={isBusy || member.isApproved}
+                                  onClick={() => setMemberToDelete(member)}
+                                  className="text-muted-foreground hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+                                  aria-label={`Delete ${member.name}`}
+                                  title={
+                                    member.isApproved
+                                      ? "Unapprove this user before deleting"
+                                      : `Delete ${member.name}`
+                                  }
+                                >
+                                  <Trash2 className="size-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {sortedMembers.length === 0 ? (
+                          <p className="px-2 py-1.5 text-sm text-muted-foreground">
+                            No users found.
+                          </p>
+                        ) : null}
                       </div>
-                    </div>
-                  );
-                })}
-                {manageableMembers.length === 0 && (
-                  <p className="px-2 py-1.5 text-sm text-neutral-500">
-                    No users found.
-                  </p>
-                )}
-              </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
               </SidebarGroupContent>
             </SidebarGroup>
           </>
@@ -241,6 +338,24 @@ export function AppSidebar({
       </SidebarContent>
 
       <SidebarFooter>
+        {showExpandedThemeToggle ? (
+          <div className="px-2 pb-2">
+            <ThemeToggle showLabel className="w-full justify-start border-sidebar-border" />
+          </div>
+        ) : (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip={isDark ? "Light mode" : "Dark mode"}
+                onClick={toggleTheme}
+                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
+              >
+                {isDark ? <Sun /> : <Moon />}
+                <span>{isDark ? "Light mode" : "Dark mode"}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
@@ -249,14 +364,14 @@ export function AppSidebar({
                   size="lg"
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                 >
-                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-neutral-800 text-xs font-bold text-neutral-100">
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-accent text-xs font-bold text-sidebar-accent-foreground">
                     {user ? initials(user.name) : "?"}
                   </div>
                   <div className="grid flex-1 text-left leading-tight">
                     <span className="truncate font-semibold">
                       {user?.name ?? "Account"}
                     </span>
-                    <span className="truncate text-xs text-neutral-400">
+                    <span className="truncate text-xs text-muted-foreground">
                       {user?.email ?? ""}
                     </span>
                   </div>
@@ -266,13 +381,11 @@ export function AppSidebar({
               <DropdownMenuContent
                 side={isMobile ? "bottom" : "right"}
                 align="end"
-                className="w-[min(16rem,calc(100vw-2rem))] border-neutral-800 bg-neutral-900 text-neutral-200"
+                className="w-[min(16rem,calc(100vw-2rem))]"
               >
                 <DropdownMenuLabel className="flex flex-col">
-                  <span className="font-medium text-neutral-100">
-                    {user?.name ?? "Account"}
-                  </span>
-                  <span className="truncate text-xs font-normal text-neutral-300">
+                  <span className="font-medium">{user?.name ?? "Account"}</span>
+                  <span className="truncate text-xs font-normal text-muted-foreground">
                     {user?.email ?? ""}
                   </span>
                   {user?.isAdmin && (
@@ -280,12 +393,15 @@ export function AppSidebar({
                       Admin
                     </span>
                   )}
+                  {user?.isAdmin && pendingApprovalCount > 0 ? (
+                    <span className="mt-1 w-fit rounded-full border border-amber-400/30 bg-amber-500/15 px-2 py-0.5 text-[10px] font-bold tabular-nums text-amber-600 dark:text-amber-300">
+                      {pendingApprovalCount} pending approval
+                      {pendingApprovalCount === 1 ? "" : "s"}
+                    </span>
+                  ) : null}
                 </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-neutral-800" />
-                <DropdownMenuItem
-                  onSelect={() => onLogout()}
-                  className="text-neutral-200 focus:!bg-neutral-800/70 focus:!text-neutral-100"
-                >
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => onLogout()}>
                   <LogOut className="size-4" />
                   Log out
                 </DropdownMenuItem>

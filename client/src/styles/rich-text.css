@@ -1,18 +1,18 @@
 /* Rich text (Quill) — editor shell, display, typography, preset colors */
 
 .rich-text-editor .ql-toolbar.ql-snow {
-  border-color: rgb(64 64 64);
+  border-color: var(--border);
   border-top-left-radius: 0.5rem;
   border-top-right-radius: 0.5rem;
-  background: rgb(23 23 23);
+  background: var(--muted);
 }
 
 .rich-text-editor .ql-container.ql-snow {
-  border-color: rgb(64 64 64);
+  border-color: var(--border);
   border-bottom-left-radius: 0.5rem;
   border-bottom-right-radius: 0.5rem;
-  background: rgb(38 38 38 / 0.6);
-  color: rgb(245 245 245);
+  background: var(--background);
+  color: var(--foreground);
   font-family: inherit;
   min-height: 6rem;
 }
@@ -83,8 +83,12 @@
 }
 
 .rich-text-content a {
-  color: rgb(129 140 248);
+  color: #4f46e5;
   text-decoration: underline;
+}
+
+.dark .rich-text-content a {
+  color: rgb(129 140 248);
 }
 
 .rich-text-content :is(ol, ul) {
@@ -145,25 +149,25 @@
 }
 
 .rich-text-editor .ql-editor.ql-blank::before {
-  color: rgb(115 115 115);
+  color: var(--muted-foreground);
   font-style: normal;
 }
 
 .rich-text-editor .ql-snow .ql-stroke {
-  stroke: rgb(163 163 163);
+  stroke: var(--muted-foreground);
 }
 
 .rich-text-editor .ql-snow .ql-fill {
-  fill: rgb(163 163 163);
+  fill: var(--muted-foreground);
 }
 
 .rich-text-editor .ql-snow .ql-picker {
-  color: rgb(212 212 212);
+  color: var(--foreground);
 }
 
 .rich-text-editor .ql-snow .ql-picker-options {
-  background: rgb(23 23 23);
-  border-color: rgb(64 64 64);
+  background: var(--popover);
+  border-color: var(--border);
 }
 
 .rich-text-editor .ql-snow .ql-picker.ql-color-picker .ql-picker-options,

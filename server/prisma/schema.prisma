@@ -54,6 +54,19 @@ model TaskDetail {
   @@map("task_details")
 }
 
+/// Admin-editable labels and header styles for weekly showcase columns.
+model WeeklyShowcaseColumnHeader {
+  columnKey   String   @id
+  label       String
+  headerStyle String   @default("default")
+  isVisible   Boolean  @default(true)
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("weekly_showcase_column_headers")
+}
+
 model RefreshToken {
   id        String   @id @default(uuid())
   userId    Int

@@ -247,8 +247,15 @@ export async function forgotPassword(req: Request, res: Response): Promise<void>
     return;
   }
 
+  const normalizedEmail = email.trim().toLowerCase();
+
   try {
-    const user = await userModel.findUserByEmail(email);
+    // Prefer exact match; also try original trimmed if legacy rows were stored with mixed case.
+    const user =
+      (await userModel.findUserByEmail(normalizedEmail)) ??
+      (normalizedEmail !== email.trim()
+        ? await userModel.findUserByEmail(email.trim())
+        : null);
 
     if (user) {
       // Invalidate any outstanding reset tokens before issuing a fresh one.
@@ -274,6 +281,13 @@ export async function forgotPassword(req: Request, res: Response): Promise<void>
       } catch (mailError) {
         // Don't surface delivery failures to the caller (avoids enumeration); log for ops.
         console.error('Password reset email error:', mailError);
+        if (/onboarding@resend\.dev/i.test(emailConfig.from)) {
+          console.error(
+            'Hint: EMAIL_FROM uses Resend sandbox (onboarding@resend.dev). ' +
+              'That sender can only deliver to your Resend account email. ' +
+              'Verify a domain in Resend and set EMAIL_FROM to an address on that domain.'
+          );
+        }
       }
     }
 

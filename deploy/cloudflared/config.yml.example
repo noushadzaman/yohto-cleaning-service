@@ -1,0 +1,18 @@
+# Cloudflare Tunnel — copy to ~/.cloudflared/config.yml
+# Used by cloudflared-monthly.service
+#
+# With a tunnel you usually do NOT need nginx or open ports 80/443.
+# cloudflared connects outbound to Cloudflare; traffic hits localhost only.
+
+tunnel: YOUR_TUNNEL_ID
+credentials-file: /home/zaman/.cloudflared/YOUR_TUNNEL_ID.json
+
+ingress:
+  # IMPORTANT: send ALL app traffic to Next.js.
+  # Do NOT route app.pcsmonthlypla.online/api/* to Express — Next has its own
+  # /api/auth/refresh, /api/users, etc. that proxy to Express internally.
+  - hostname: app.pcsmonthlypla.online
+    service: http://127.0.0.1:3000
+  - hostname: api.pcsmonthlypla.online
+    service: http://127.0.0.1:5000
+  - service: http_status:404

@@ -10,21 +10,29 @@ type DashboardTotHoursCellProps = {
   hours: number;
   variant?: "body" | "footer";
   className?: string;
+  isToday?: boolean;
 };
 
 export function DashboardTotHoursCell({
   hours,
   variant = "body",
   className,
+  isToday = false,
 }: DashboardTotHoursCellProps) {
   const isFooter = variant === "footer";
 
   return (
     <td
       className={cn(
-        "border-b border-neutral-600",
-        isFooter ? TOT_COLUMN_FOOTER_CLASS : TOT_COLUMN_BODY_CLASS,
-        !isFooter && "border-r border-neutral-600",
+        "border-b border-border",
+        isFooter
+          ? TOT_COLUMN_FOOTER_CLASS
+          : cn(
+              TOT_COLUMN_BODY_CLASS,
+              "align-middle",
+              isToday && "bg-muted/60 dark:bg-muted/40"
+            ),
+        !isFooter && "border-r border-border",
         className
       )}
     >
@@ -35,7 +43,7 @@ export function DashboardTotHoursCell({
 
 export const TOT_HOURS_HEADER_CLASS = cn(
   TOT_COLUMN_HEADER_CLASS,
-  "border-r border-neutral-600"
+  "border-r border-border"
 );
 
 export function TotHoursHeaderLabel() {

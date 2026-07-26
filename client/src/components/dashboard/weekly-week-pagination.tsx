@@ -32,7 +32,7 @@ export function WeeklyWeekPagination({ year, weekNumber }: WeeklyWeekPaginationP
         asChild
         variant="outline"
         size="icon"
-        className="shrink-0 rounded-full border-neutral-700 bg-neutral-900 text-neutral-200 hover:border-neutral-600 hover:bg-neutral-800 hover:text-white"
+        className="shrink-0 rounded-full"
       >
         <Link href={weeklyPagePath(prev)} prefetch aria-label="Previous week">
           <ChevronLeft className="size-5" aria-hidden />
@@ -40,24 +40,19 @@ export function WeeklyWeekPagination({ year, weekNumber }: WeeklyWeekPaginationP
       </Button>
 
       <div className="flex min-w-0 flex-col items-center gap-0.5 text-center">
-        <p className="text-sm font-semibold text-neutral-100">
+        <p className="text-sm font-semibold text-foreground">
           Week {weekNumber}
-          <span className="font-medium text-neutral-200"> · {year}</span>
+          <span className="font-normal text-muted-foreground"> · {year}</span>
         </p>
         {rangeLabel ? (
-          <p className="text-base font-medium text-neutral-200">{rangeLabel}</p>
+          <p className="text-xs text-muted-foreground">{rangeLabel}</p>
         ) : null}
         {isCurrentWeek ? (
-          <span className="text-[0.65rem] font-medium uppercase tracking-wide text-indigo-300">
+          <span className="text-[0.65rem] font-medium uppercase tracking-wide text-indigo-500 dark:text-indigo-300">
             Current week
           </span>
         ) : (
-          <Button
-            asChild
-            variant="outline"
-            size="sm"
-            className="mt-1 h-7 border-neutral-700 bg-neutral-950 px-3 text-xs font-medium text-neutral-200 hover:bg-neutral-800 hover:text-neutral-100"
-          >
+          <Button asChild variant="outline" size="sm" className="mt-1 h-7 px-3 text-xs font-medium">
             <Link href={weeklyPagePath(current)} prefetch>
               Today
             </Link>
@@ -69,7 +64,7 @@ export function WeeklyWeekPagination({ year, weekNumber }: WeeklyWeekPaginationP
         asChild
         variant="outline"
         size="icon"
-        className="shrink-0 rounded-full border-neutral-700 bg-neutral-900 text-neutral-200 hover:border-neutral-600 hover:bg-neutral-800 hover:text-white"
+        className="shrink-0 rounded-full"
       >
         <Link href={weeklyPagePath(next)} prefetch aria-label="Next week">
           <ChevronRight className="size-5" aria-hidden />

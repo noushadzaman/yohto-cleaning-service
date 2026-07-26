@@ -9,88 +9,313 @@ export type TaskDetail = {
   text: string;
 };
 
+export const BUILT_IN_WEEKLY_COLUMN_KEYS = [
+  "title",
+  "weekdayDate",
+  "customer",
+  "pointOfBusiness",
+  "keysSandra",
+  "alarmSandra",
+  "instructions",
+  "specialEquipmentDetergent",
+  "maxTimeHoursInclusiveOfDriving",
+] as const;
+
+export type BuiltInWeeklyColumnKey = (typeof BUILT_IN_WEEKLY_COLUMN_KEYS)[number];
+
+export type CustomWeeklyColumnKey = `custom_${string}`;
+
+export type WeeklyShowcaseColumnKey = BuiltInWeeklyColumnKey | CustomWeeklyColumnKey;
+
 /** Row model for `/weekly` — each column is a `TaskDetail`, not main-dashboard `TaskRecord`. */
 export type WeeklyShowcaseRow = {
   id: string;
-  title: TaskDetail;
-  weekdayDate: TaskDetail;
-  customer: TaskDetail;
-  pointOfBusiness: TaskDetail;
-  keysSandra: TaskDetail;
-  alarmSandra: TaskDetail;
-  instructions: TaskDetail;
-  specialEquipmentDetergent: TaskDetail;
-  maxTimeHoursInclusiveOfDriving: TaskDetail;
+  [key: string]: TaskDetail | string;
 };
 
-export type WeeklyShowcaseColumnKey = Exclude<keyof WeeklyShowcaseRow, "id">;
+export type WeeklyShowcaseHeaderStyle = "default" | "keysSandra" | "alarmSandra";
 
-export const WEEKLY_SHOWCASE_COLUMNS: {
+export type WeeklyShowcaseColumnHeader = {
+  columnKey: WeeklyShowcaseColumnKey;
+  label: string;
+  headerStyle: WeeklyShowcaseHeaderStyle;
+  isVisible: boolean;
+  sortOrder: number;
+};
+
+export type WeeklyShowcaseColumn = {
   key: WeeklyShowcaseColumnKey;
   label: string;
+  thClass: string;
   tdClass: string;
-}[] = [
+  contentAlign: "left" | "center";
+  headerStyle: WeeklyShowcaseHeaderStyle;
+};
+
+const WEEKLY_TH_BASE =
+  "px-4 py-3.5 text-center text-sm font-bold leading-snug bg-muted text-foreground";
+
+const TD_BORDER = "border-border";
+
+const TD_LAYOUT: Record<
+  BuiltInWeeklyColumnKey,
   {
-    key: "title",
-    label: "Title",
-    tdClass:
-      "max-w-[10rem] border-b border-l border-r border-neutral-600 p-0 align-middle text-center text-neutral-200",
+    thMinWidthClass: string;
+    tdMinWidthClass: string;
+    tdClass: string;
+    contentAlign: "left" | "center";
+    isFirst?: boolean;
+  }
+> = {
+  title: {
+    thMinWidthClass: "min-w-[11rem]",
+    tdMinWidthClass: "min-w-[11rem]",
+    tdClass: `border-b border-l border-r ${TD_BORDER} p-0 align-top text-foreground`,
+    contentAlign: "left",
+    isFirst: true,
   },
+  weekdayDate: {
+    thMinWidthClass: "min-w-[10rem]",
+    tdMinWidthClass: "min-w-[10rem]",
+    tdClass: `border-b border-r ${TD_BORDER} p-0 align-top text-muted-foreground`,
+    contentAlign: "center",
+  },
+  customer: {
+    thMinWidthClass: "min-w-[11rem]",
+    tdMinWidthClass: "min-w-[11rem]",
+    tdClass: `border-b border-r ${TD_BORDER} p-0 align-top text-foreground`,
+    contentAlign: "left",
+  },
+  pointOfBusiness: {
+    thMinWidthClass: "min-w-[14rem]",
+    tdMinWidthClass: "min-w-[14rem]",
+    tdClass: `border-b border-r ${TD_BORDER} p-0 align-top text-foreground`,
+    contentAlign: "left",
+  },
+  keysSandra: {
+    thMinWidthClass: "min-w-[11rem]",
+    tdMinWidthClass: "min-w-[11rem]",
+    tdClass: `border-b border-r ${TD_BORDER} p-0 align-top text-foreground`,
+    contentAlign: "left",
+  },
+  alarmSandra: {
+    thMinWidthClass: "min-w-[11rem]",
+    tdMinWidthClass: "min-w-[11rem]",
+    tdClass: `border-b border-r ${TD_BORDER} p-0 align-top text-foreground`,
+    contentAlign: "left",
+  },
+  instructions: {
+    thMinWidthClass: "min-w-[16rem]",
+    tdMinWidthClass: "min-w-[16rem]",
+    tdClass: `border-b border-r ${TD_BORDER} p-0 align-top text-foreground`,
+    contentAlign: "left",
+  },
+  specialEquipmentDetergent: {
+    thMinWidthClass: "min-w-[14rem]",
+    tdMinWidthClass: "min-w-[14rem]",
+    tdClass: `border-b border-r ${TD_BORDER} p-0 align-top text-foreground`,
+    contentAlign: "left",
+  },
+  maxTimeHoursInclusiveOfDriving: {
+    thMinWidthClass: "min-w-[8rem]",
+    tdMinWidthClass: "min-w-[8rem]",
+    tdClass: `border-b border-r ${TD_BORDER} p-0 align-top tabular-nums text-muted-foreground`,
+    contentAlign: "center",
+  },
+};
+
+const CUSTOM_COLUMN_LAYOUT = {
+  thMinWidthClass: "min-w-[12rem]",
+  tdMinWidthClass: "min-w-[12rem]",
+  tdClass: `border-b border-r ${TD_BORDER} p-0 align-top text-foreground`,
+  contentAlign: "left" as const,
+};
+
+export const DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS: WeeklyShowcaseColumnHeader[] = [
+  { columnKey: "title", label: "Title", headerStyle: "default", isVisible: true, sortOrder: 0 },
   {
-    key: "weekdayDate",
+    columnKey: "weekdayDate",
     label: "Weekday / date",
-    tdClass:
-      "max-w-[9rem] border-b border-r border-neutral-600 p-0 align-middle text-center text-neutral-300",
+    headerStyle: "default",
+    isVisible: true,
+    sortOrder: 1,
   },
+  { columnKey: "customer", label: "Customer", headerStyle: "default", isVisible: true, sortOrder: 2 },
   {
-    key: "customer",
-    label: "Customer",
-    tdClass:
-      "max-w-[10rem] border-b border-r border-neutral-600 p-0 align-middle text-center text-neutral-200",
-  },
-  {
-    key: "pointOfBusiness",
+    columnKey: "pointOfBusiness",
     label: "Point of business / exact work area",
-    tdClass:
-      "max-w-[12rem] border-b border-r border-neutral-600 p-0 align-middle text-center text-neutral-200",
+    headerStyle: "default",
+    isVisible: true,
+    sortOrder: 3,
   },
   {
-    key: "keysSandra",
+    columnKey: "keysSandra",
     label: "Keys Sandra fills in",
-    tdClass:
-      "max-w-[10rem] border-b border-r border-neutral-600 p-0 align-middle text-center text-neutral-200",
+    headerStyle: "default",
+    isVisible: true,
+    sortOrder: 4,
   },
   {
-    key: "alarmSandra",
+    columnKey: "alarmSandra",
     label: "Alarm Sandra fills in",
-    tdClass:
-      "max-w-[10rem] border-b border-r border-neutral-600 p-0 align-middle text-center text-neutral-200",
+    headerStyle: "default",
+    isVisible: true,
+    sortOrder: 5,
   },
   {
-    key: "instructions",
+    columnKey: "instructions",
     label: "Instructions",
-    tdClass:
-      "min-w-[12rem] max-w-[18rem] border-b border-r border-neutral-600 p-0 align-middle text-center text-neutral-200",
+    headerStyle: "default",
+    isVisible: true,
+    sortOrder: 6,
   },
   {
-    key: "specialEquipmentDetergent",
+    columnKey: "specialEquipmentDetergent",
     label: "Special equipment / detergent",
-    tdClass:
-      "max-w-[12rem] border-b border-r border-neutral-600 p-0 align-middle text-center text-neutral-200",
+    headerStyle: "default",
+    isVisible: true,
+    sortOrder: 7,
   },
   {
-    key: "maxTimeHoursInclusiveOfDriving",
+    columnKey: "maxTimeHoursInclusiveOfDriving",
     label: "Max time (h) inclusive of driving",
-    tdClass:
-      "max-w-[6rem] border-b border-r border-neutral-600 p-0 align-middle text-center tabular-nums text-neutral-300",
+    headerStyle: "default",
+    isVisible: true,
+    sortOrder: 8,
   },
 ];
+
+export const WEEKLY_SHOWCASE_HEADER_STYLE_OPTIONS: {
+  value: WeeklyShowcaseHeaderStyle;
+  label: string;
+}[] = [
+  { value: "default", label: "Default (dark gray)" },
+  { value: "keysSandra", label: "Keys Sandra (amber)" },
+  { value: "alarmSandra", label: "Alarm Sandra (rose)" },
+];
+
+const HEADER_STYLE_SET = new Set<string>(
+  WEEKLY_SHOWCASE_HEADER_STYLE_OPTIONS.map((option) => option.value)
+);
+
+export function isCustomWeeklyColumnKey(
+  value: string
+): value is CustomWeeklyColumnKey {
+  return /^custom_[a-z0-9]{8,32}$/i.test(value);
+}
+
+export function isBuiltInWeeklyColumnKey(
+  value: string
+): value is BuiltInWeeklyColumnKey {
+  return (BUILT_IN_WEEKLY_COLUMN_KEYS as readonly string[]).includes(value);
+}
+
+export function isWeeklyShowcaseColumnKey(
+  value: string
+): value is WeeklyShowcaseColumnKey {
+  return isBuiltInWeeklyColumnKey(value) || isCustomWeeklyColumnKey(value);
+}
+
+function normalizeHeaderStyle(value: string): WeeklyShowcaseHeaderStyle {
+  return HEADER_STYLE_SET.has(value) ? (value as WeeklyShowcaseHeaderStyle) : "default";
+}
+
+function normalizeColumnHeaders(
+  headers: WeeklyShowcaseColumnHeader[] | null | undefined
+): WeeklyShowcaseColumnHeader[] {
+  const source =
+    headers && headers.length > 0 ? headers : DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS;
+  const byKey = new Map(source.map((header) => [header.columnKey, header]));
+  const merged: WeeklyShowcaseColumnHeader[] = [];
+
+  DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS.forEach((defaults) => {
+    const saved = byKey.get(defaults.columnKey);
+    merged.push(
+      saved
+        ? {
+            ...saved,
+            isVisible: saved.isVisible !== false,
+            sortOrder: saved.sortOrder ?? defaults.sortOrder,
+          }
+        : defaults
+    );
+  });
+
+  for (const header of source) {
+    if (isCustomWeeklyColumnKey(header.columnKey)) {
+      merged.push({
+        ...header,
+        isVisible: header.isVisible !== false,
+        sortOrder: header.sortOrder ?? merged.length,
+      });
+    }
+  }
+
+  return merged.sort(
+    (a, b) => a.sortOrder - b.sortOrder || a.columnKey.localeCompare(b.columnKey)
+  );
+}
+
+function getColumnLayout(columnKey: WeeklyShowcaseColumnKey) {
+  if (isBuiltInWeeklyColumnKey(columnKey)) {
+    return TD_LAYOUT[columnKey];
+  }
+  return CUSTOM_COLUMN_LAYOUT;
+}
+
+function buildThClass(columnKey: WeeklyShowcaseColumnKey, isFirst: boolean): string {
+  const layout = getColumnLayout(columnKey);
+  const borderSides = isFirst
+    ? `border-b border-l border-r border-t ${TD_BORDER}`
+    : `border-b border-r border-t ${TD_BORDER}`;
+  return `${layout.thMinWidthClass} ${borderSides} ${WEEKLY_TH_BASE}`;
+}
+
+export function getVisibleWeeklyColumnHeaders(
+  headers: WeeklyShowcaseColumnHeader[] | null | undefined = DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS
+): WeeklyShowcaseColumnHeader[] {
+  return normalizeColumnHeaders(headers).filter((header) => header.isVisible !== false);
+}
+
+export function buildWeeklyShowcaseColumns(
+  headers: WeeklyShowcaseColumnHeader[] | null | undefined = DEFAULT_WEEKLY_SHOWCASE_COLUMN_HEADERS
+): WeeklyShowcaseColumn[] {
+  const visibleHeaders = getVisibleWeeklyColumnHeaders(headers);
+
+  return visibleHeaders.map((header, index) => {
+    const layout = getColumnLayout(header.columnKey);
+    const style = normalizeHeaderStyle(header.headerStyle);
+    return {
+      key: header.columnKey,
+      label: header.label,
+      headerStyle: style,
+      thClass: buildThClass(header.columnKey, index === 0),
+      tdClass: `${layout.tdMinWidthClass} ${layout.tdClass}`,
+      contentAlign: layout.contentAlign,
+    };
+  });
+}
+
+/** Default columns for static key iteration (merge, row utils). */
+export const WEEKLY_SHOWCASE_COLUMNS = buildWeeklyShowcaseColumns();
 
 /** Row returned from GET /api/task-details */
 export type TaskDetailRecord = {
   id: number;
   rowKey: string;
-  columnKey: WeeklyShowcaseColumnKey;
+  columnKey: string;
   date: string;
   text: string;
 };
+
+export function getWeeklyRowCell(row: WeeklyShowcaseRow, columnKey: string): TaskDetail {
+  const value = row[columnKey];
+  if (value && typeof value === "object" && "text" in value) {
+    return value as TaskDetail;
+  }
+  return {
+    id: `${row.id}-${columnKey}`,
+    date: "",
+    text: "—",
+  };
+}

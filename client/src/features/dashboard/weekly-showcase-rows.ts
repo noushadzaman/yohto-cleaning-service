@@ -1,4 +1,5 @@
 import type { TaskDetail, WeeklyShowcaseRow } from "./weekly-showcase-types";
+import { BUILT_IN_WEEKLY_COLUMN_KEYS } from "./weekly-showcase-types";
 
 const EM = "—";
 
@@ -14,19 +15,15 @@ function cell(rowKey: string, column: string): TaskDetail {
 export function createBlankWeeklyRow(
   year: number,
   week: number,
-  rowSuffix: string
+  rowSuffix: string,
+  columnKeys: readonly string[] = BUILT_IN_WEEKLY_COLUMN_KEYS
 ): WeeklyShowcaseRow {
   const id = `${year}-w${week}-${rowSuffix}`;
-  return {
-    id,
-    title: cell(id, "title"),
-    weekdayDate: cell(id, "weekdayDate"),
-    customer: cell(id, "customer"),
-    pointOfBusiness: cell(id, "pointOfBusiness"),
-    keysSandra: cell(id, "keysSandra"),
-    alarmSandra: cell(id, "alarmSandra"),
-    instructions: cell(id, "instructions"),
-    specialEquipmentDetergent: cell(id, "specialEquipmentDetergent"),
-    maxTimeHoursInclusiveOfDriving: cell(id, "maxTimeHoursInclusiveOfDriving"),
-  };
+  const row: WeeklyShowcaseRow = { id };
+
+  for (const column of columnKeys) {
+    row[column] = cell(id, column);
+  }
+
+  return row;
 }

@@ -9,7 +9,7 @@ export const RichTextEditorLazy = dynamic(
     ssr: false,
     loading: () => (
       <div
-        className="min-h-24 animate-pulse rounded-lg border border-neutral-700 bg-neutral-800/40"
+        className="min-h-24 animate-pulse rounded-lg border border-border bg-muted"
         aria-hidden
       />
     ),

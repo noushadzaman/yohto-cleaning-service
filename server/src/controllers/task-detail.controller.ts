@@ -1,6 +1,6 @@
 import type { Request, Response } from 'express';
 import { Prisma } from '@prisma/client';
-import { isWeeklyTaskDetailColumnKey } from '../constants/weekly-task-detail';
+import { isWeeklyColumnKey } from '../constants/weekly-task-detail';
 import * as taskDetailModel from '../models/task-detail.model';
 import { canonicalTaskDetailRowKey } from '../utils/task-detail-row-key';
 import { resolveTaskDetailDate } from '../utils/calendar-week';
@@ -105,7 +105,7 @@ export async function upsertTaskDetail(req: Request, res: Response): Promise<voi
     res.status(400).json({ error: 'rowKey is required' });
     return;
   }
-  if (!isWeeklyTaskDetailColumnKey(columnKey)) {
+  if (!isWeeklyColumnKey(columnKey)) {
     res.status(400).json({ error: 'Invalid columnKey' });
     return;
   }

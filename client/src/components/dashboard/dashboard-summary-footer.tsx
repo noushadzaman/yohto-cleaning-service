@@ -1,4 +1,3 @@
-import type { MutableRefObject } from "react";
 import {
   formatSummaryHours,
   type DashboardUserSummaries,
@@ -17,7 +16,6 @@ import { cn } from "@/lib/utils";
 type DashboardSummaryFooterProps = {
   users: User[];
   summaries: DashboardUserSummaries;
-  rowRefs?: MutableRefObject<(HTMLTableRowElement | null)[]>;
 };
 
 type SummaryFooterRowProps = {
@@ -25,29 +23,27 @@ type SummaryFooterRowProps = {
   users: User[];
   valuesByUserId: Map<number, number>;
   totalHours: number;
+  isFirst?: boolean;
 };
 
-function SummaryFooterLeadingRow({
+function SummaryFooterRow({
   label,
+  users,
+  valuesByUserId,
+  totalHours,
   isFirst,
-  rowRef,
-}: {
-  label: string;
-  isFirst?: boolean;
-  rowRef?: (el: HTMLTableRowElement | null) => void;
-}) {
+}: SummaryFooterRowProps) {
   return (
     <tr
-      ref={rowRef}
       className={cn(
         SUMMARY_FOOTER_ROW_CLASS,
         isFirst && SUMMARY_FOOTER_ROW_FIRST_CLASS,
-        "[&>td]:border-b [&>td]:border-neutral-600"
+        "[&>td]:border-b [&>td]:border-border"
       )}
     >
       <td
         colSpan={LEADING_COLUMN_COUNT}
-        className={SUMMARY_FOOTER_LABEL_CLASS}
+        className={cn(SUMMARY_FOOTER_LABEL_CLASS, "sticky left-0 z-20")}
         style={{
           width: `${LEADING_TOTAL_REM}rem`,
           minWidth: `${LEADING_TOTAL_REM}rem`,
@@ -56,37 +52,8 @@ function SummaryFooterLeadingRow({
       >
         {label}
       </td>
-    </tr>
-  );
-}
-
-function SummaryFooterScrollRow({
-  users,
-  valuesByUserId,
-  totalHours,
-  isFirst,
-  rowRef,
-}: Omit<SummaryFooterRowProps, "label"> & {
-  isFirst?: boolean;
-  rowRef?: (el: HTMLTableRowElement | null) => void;
-}) {
-  return (
-    <tr
-      ref={rowRef}
-      className={cn(
-        SUMMARY_FOOTER_ROW_CLASS,
-        isFirst && SUMMARY_FOOTER_ROW_FIRST_CLASS,
-        "[&>td]:border-b [&>td]:border-neutral-600"
-      )}
-    >
-      {users.map((user, index) => (
-        <td
-          key={user.id}
-          className={cn(
-            SUMMARY_FOOTER_VALUE_CLASS,
-            index === 0 && "border-l border-r border-indigo-500/40"
-          )}
-        >
+      {users.map((user) => (
+        <td key={user.id} className={SUMMARY_FOOTER_VALUE_CLASS}>
           {formatSummaryHours(valuesByUserId.get(user.id) ?? 0)}
         </td>
       ))}
@@ -95,61 +62,25 @@ function SummaryFooterScrollRow({
   );
 }
 
-export function DashboardSummaryFooterLeading({
-  users,
-  summaries,
-  rowRefs,
-}: DashboardSummaryFooterProps) {
+export function DashboardSummaryFooter({ users, summaries }: DashboardSummaryFooterProps) {
   if (users.length === 0) {
     return null;
   }
 
   return (
     <tfoot>
-      <SummaryFooterLeadingRow
+      <SummaryFooterRow
         label="SUM h/month"
-        isFirst
-        rowRef={(el) => {
-          if (rowRefs) rowRefs.current[0] = el;
-        }}
-      />
-      <SummaryFooterLeadingRow
-        label="AVERAGE h/week"
-        rowRef={(el) => {
-          if (rowRefs) rowRefs.current[1] = el;
-        }}
-      />
-    </tfoot>
-  );
-}
-
-export function DashboardSummaryFooterScroll({
-  users,
-  summaries,
-  rowRefs,
-}: DashboardSummaryFooterProps) {
-  if (users.length === 0) {
-    return null;
-  }
-
-  return (
-    <tfoot>
-      <SummaryFooterScrollRow
         users={users}
         valuesByUserId={summaries.monthlySumByUserId}
         totalHours={summaries.grandMonthlyTotalHours}
         isFirst
-        rowRef={(el) => {
-          if (rowRefs) rowRefs.current[0] = el;
-        }}
       />
-      <SummaryFooterScrollRow
+      <SummaryFooterRow
+        label="AVERAGE h/week"
         users={users}
         valuesByUserId={summaries.weeklyAverageByUserId}
         totalHours={summaries.grandWeeklyAverageTotalHours}
-        rowRef={(el) => {
-          if (rowRefs) rowRefs.current[1] = el;
-        }}
       />
     </tfoot>
   );
