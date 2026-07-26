@@ -96,6 +96,7 @@ export function DashboardDataTable({
     .getAllLeafColumns()
     .filter((column) => column.id.startsWith("user-"));
   const hasNoUsers = userColumns.length === 0;
+  const firstUserColumnId = userColumns[0]?.id;
   const rows = table.getRowModel().rows;
   const showTotHoursColumn = !hasNoUsers;
 

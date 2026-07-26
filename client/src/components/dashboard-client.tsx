@@ -86,9 +86,21 @@ export default function DashboardClient({
   const calendarYear = year;
   const calendarMonth = monthNumber;
 
+  // Show the currently logged-in user as the first user column; keep the
+  // remaining users in their original order.
+  const orderedUsers = useMemo(() => {
+    if (!user) return users;
+    const index = users.findIndex((candidate) => candidate.id === user.id);
+    if (index <= 0) return users;
+    const reordered = [...users];
+    const [currentUser] = reordered.splice(index, 1);
+    reordered.unshift(currentUser);
+    return reordered;
+  }, [users, user]);
+
   const summaries = useMemo(
-    () => computeDashboardUserSummaries(tasks, users, calendarYear, calendarMonth),
-    [tasks, users, calendarYear, calendarMonth]
+    () => computeDashboardUserSummaries(tasks, orderedUsers, calendarYear, calendarMonth),
+    [tasks, orderedUsers, calendarYear, calendarMonth]
   );
 
   const openTaskDialog = useCallback(
@@ -173,7 +185,7 @@ export default function DashboardClient({
   }, [initialTeamMembers, users]);
 
   const columns = useDashboardColumns({
-    users,
+    users: orderedUsers,
     taskLookup,
     canManageTasks: Boolean(user?.isAdmin),
     currentUserId: user?.id ?? null,
