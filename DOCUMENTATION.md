@@ -1,5 +1,7 @@
 # Yohto Dashboard — Application Guide
 
+> **Customer-facing overview:** see [PRODUCT.md](./PRODUCT.md) for product details, features, cost, step-by-step guides, and user flexibility.
+
 Yohto Dashboard is an internal **workforce scheduling and job planning tool** for a cleaning service ("Yohto"). Admins schedule employee work across a monthly calendar grid and maintain a detailed weekly job showcase. Employees self-register, get approved by an admin, and then view their assignments.
 
 The project is a monorepo-style repository with two independent apps:
@@ -354,7 +356,20 @@ All endpoints are prefixed with `/api`.
 
 ## Deployment Notes
 
-- The client is intended for **Vercel** (deployment references appear in the code, e.g. `yohto-cleaning-service.vercel.app`).
-- The Express API is deployed separately; set `CLIENT_ORIGIN` to the deployed client URL and `NEXT_PUBLIC_API_BASE_URL` to the deployed API URL.
+### Self-hosted (Cloudflare Tunnel + systemd)
+
+See **[deploy/SERVER-SETUP.md](../deploy/SERVER-SETUP.md)** for the complete runbook (Linux, UFW, users, sudo, tunnel, systemd, env, deploy).
+
+- **nginx** listens on `80/443` only.
+- **Next.js** binds `127.0.0.1:3000` (`npm run start:prod`).
+- **Express** binds `127.0.0.1:5000` (`HOST=127.0.0.1`).
+- `app.pcsmonthlypla.online` → client; `api.pcsmonthlypla.online` → API.
+- Set `client/.env.local`: `API_BASE_URL=http://127.0.0.1:5000` (Next proxies to API on localhost).
+- Set `server/.env`: `CLIENT_ORIGIN=https://app.pcsmonthlypla.online`, `TRUST_PROXY=1`.
+
+### Vercel (client only)
+
+- The client can be deployed on **Vercel**; set `NEXT_PUBLIC_API_BASE_URL` to the public API URL.
+- The Express API runs separately; set `CLIENT_ORIGIN` to the deployed client URL.
 - Ensure `JWT_SECRET` is a strong (32+ char) secret in production, configure `TRUST_PROXY` appropriately behind a reverse proxy, and verify the `EMAIL_FROM` sender domain in Resend.
 - Run `prisma migrate deploy` against the production database and seed the initial admin user via `ADMIN_EMAIL` / `ADMIN_PASSWORD`.

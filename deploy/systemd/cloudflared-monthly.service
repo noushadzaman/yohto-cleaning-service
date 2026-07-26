@@ -1,0 +1,15 @@
+[Unit]
+Description=Cloudflare Tunnel - monthly-plan
+After=network.target yohto-client.service
+Wants=yohto-client.service
+
+[Service]
+Type=simple
+User=zaman
+WorkingDirectory=/home/zaman
+ExecStart=/usr/local/bin/cloudflared tunnel --config /home/zaman/.cloudflared/config.yml run
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

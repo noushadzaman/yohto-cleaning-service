@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   CalendarDays,
   ChevronsUpDown,
+  ClipboardList,
   LayoutDashboard,
   Loader2,
   LogOut,
@@ -71,6 +72,7 @@ type AppSidebarProps = {
 const NAV_ITEMS = [
   { href: "/", label: "Main dashboard", icon: LayoutDashboard },
   { href: "/weekly", label: "Weekly showcase", icon: CalendarDays },
+  { href: "/my-tasks", label: "My work", adminLabel: "Staffs", icon: ClipboardList },
 ] as const;
 
 function initials(name: string) {
@@ -171,16 +173,18 @@ export function AppSidebar({
               {NAV_ITEMS.map((item) => {
                 const active = pathname === item.href;
                 const Icon = item.icon;
+                const label =
+                  "adminLabel" in item && user?.isAdmin ? item.adminLabel : item.label;
                 return (
                   <SidebarMenuItem key={item.href}>
                     <SidebarMenuButton
                       asChild
                       isActive={active}
-                      tooltip={item.label}
+                      tooltip={label}
                     >
                       <Link href={item.href}>
                         <Icon />
-                        <span>{item.label}</span>
+                        <span>{label}</span>
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

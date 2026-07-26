@@ -1,6 +1,22 @@
 import * as React from "react"
+import { useSyncExternalStore } from "react"
 
 const MOBILE_BREAKPOINT = 768
+const DESKTOP_MEDIA_QUERY = `(min-width: ${MOBILE_BREAKPOINT}px)`
+
+function subscribeDesktop(onStoreChange: () => void) {
+  const mql = window.matchMedia(DESKTOP_MEDIA_QUERY)
+  mql.addEventListener("change", onStoreChange)
+  return () => mql.removeEventListener("change", onStoreChange)
+}
+
+function getDesktopSnapshot() {
+  return window.matchMedia(DESKTOP_MEDIA_QUERY).matches
+}
+
+function getDesktopServerSnapshot() {
+  return false
+}
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState<boolean | undefined>(undefined)
@@ -16,4 +32,12 @@ export function useIsMobile() {
   }, [])
 
   return !!isMobile
+}
+
+export function useIsDesktop() {
+  return useSyncExternalStore(
+    subscribeDesktop,
+    getDesktopSnapshot,
+    getDesktopServerSnapshot
+  )
 }

@@ -10,12 +10,14 @@ type DashboardTotHoursCellProps = {
   hours: number;
   variant?: "body" | "footer";
   className?: string;
+  isToday?: boolean;
 };
 
 export function DashboardTotHoursCell({
   hours,
   variant = "body",
   className,
+  isToday = false,
 }: DashboardTotHoursCellProps) {
   const isFooter = variant === "footer";
 
@@ -23,7 +25,13 @@ export function DashboardTotHoursCell({
     <td
       className={cn(
         "border-b border-border",
-        isFooter ? TOT_COLUMN_FOOTER_CLASS : cn(TOT_COLUMN_BODY_CLASS, "align-middle"),
+        isFooter
+          ? TOT_COLUMN_FOOTER_CLASS
+          : cn(
+              TOT_COLUMN_BODY_CLASS,
+              "align-middle",
+              isToday && "bg-muted/60 dark:bg-muted/40"
+            ),
         !isFooter && "border-r border-border",
         className
       )}

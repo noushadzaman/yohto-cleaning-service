@@ -1,0 +1,13 @@
+# Sudo — admin user (example: zaman)
+# Install: sudo visudo -f /etc/sudoers.d/zaman
+# Validate: sudo visudo -cf /etc/sudoers.d/zaman
+
+Defaults timestamp_timeout=15
+Defaults mail_badpass
+
+Cmnd_Alias UPDATE_READ = /usr/bin/apt update
+Cmnd_Alias SERVICE_STATUS = /usr/bin/systemctl status *
+Cmnd_Alias NETWORK_READ = /usr/bin/ss, /usr/bin/ping -c *
+
+zaman ALL=(ALL) NOPASSWD: UPDATE_READ, SERVICE_STATUS, NETWORK_READ
+zaman ALL=(ALL:ALL) ALL

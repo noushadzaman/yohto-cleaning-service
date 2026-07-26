@@ -2,6 +2,7 @@
 
 import { flexRender, type Row, type Table } from "@tanstack/react-table";
 import type { DashboardUserSummaries } from "@/features/dashboard/dashboard-summary";
+import { isCalendarToday } from "@/features/dashboard/month-utils";
 import type { DashboardRow, User } from "@/features/dashboard/types";
 import { DashboardSummaryFooter } from "./dashboard-summary-footer";
 import {
@@ -24,6 +25,9 @@ const TABLE_CLASS =
   "w-full border-separate border-spacing-0 table-fixed caption-bottom text-center text-sm";
 
 const STICKY_LEADING_BG = "bg-card";
+/** Subtle tint so today's row is noticeable without hurting readability. */
+const TODAY_ROW_BG = "bg-muted/60 dark:bg-muted/40";
+const STICKY_LEADING_TODAY_BG = "bg-muted/80 dark:bg-muted/55";
 const STICKY_HEADER_BG = "bg-muted/95";
 
 function isLeadingColumn(columnId: string): boolean {
@@ -48,15 +52,16 @@ function leadingHeaderClass(columnId: string): string {
   return "";
 }
 
-function leadingBodyClass(columnId: string): string {
+function leadingBodyClass(columnId: string, isToday = false): string {
+  const stickyBg = isToday ? STICKY_LEADING_TODAY_BG : STICKY_LEADING_BG;
   if (columnId === "dateNum") {
-    return `${LEAD_DATE_W} sticky left-0 z-20 border-b border-l border-r border-border ${STICKY_LEADING_BG} text-center font-bold text-foreground`;
+    return `${LEAD_DATE_W} sticky left-0 z-20 border-b border-l border-r border-border ${stickyBg} text-center font-bold text-foreground`;
   }
   if (columnId === "dayName") {
-    return `${LEAD_DAY_W} sticky left-8 z-20 border-b border-r border-border ${STICKY_LEADING_BG} text-center font-medium text-muted-foreground`;
+    return `${LEAD_DAY_W} sticky left-8 z-20 border-b border-r border-border ${stickyBg} text-center font-medium text-muted-foreground`;
   }
   if (columnId === "week") {
-    return `${LEAD_WEEK_W} sticky left-[4.5rem] z-20 border-b border-r border-border ${STICKY_LEADING_BG} text-center font-medium text-muted-foreground shadow-[2px_0_6px_-2px_rgba(0,0,0,0.12)] dark:shadow-[2px_0_6px_-2px_rgba(0,0,0,0.45)]`;
+    return `${LEAD_WEEK_W} sticky left-[4.5rem] z-20 border-b border-r border-border ${stickyBg} text-center font-medium text-muted-foreground shadow-[2px_0_6px_-2px_rgba(0,0,0,0.12)] dark:shadow-[2px_0_6px_-2px_rgba(0,0,0,0.45)]`;
   }
   return "";
 }
@@ -67,11 +72,11 @@ function scrollHeaderClass(isHighlighted = false): string {
     : "border-b border-r border-t border-border text-center";
 }
 
-function scrollBodyClass(columnId: string): string {
+function scrollBodyClass(columnId: string, isToday = false): string {
   if (columnId.startsWith("user-")) {
-    return "border-b border-r border-border text-center";
+    return cn("border-b border-r border-border text-center", isToday && TODAY_ROW_BG);
   }
-  return "border-b border-border text-center";
+  return cn("border-b border-border text-center", isToday && TODAY_ROW_BG);
 }
 
 type DashboardDataTableProps = {
@@ -102,57 +107,68 @@ export function DashboardDataTable({
   const leadingHeaders =
     headerGroup?.headers.filter((h) => isLeadingColumn(h.column.id)) ?? [];
 
-  const renderRow = (row: Row<DashboardRow>, rowIndex: number) => (
-    <tr key={row.id}>
-      {row.getVisibleCells().map((cell) => {
-        const id = cell.column.id;
+  const renderRow = (row: Row<DashboardRow>, rowIndex: number) => {
+    const { calendarYear, calendarMonth, dateNum } = row.original;
+    const isToday = isCalendarToday(calendarYear, calendarMonth, dateNum);
 
-        if (isLeadingColumn(id)) {
-          return (
-            <td
-              key={cell.id}
-              className={cn(
-                "min-h-40 whitespace-nowrap px-1 py-2 align-middle transition-colors hover:bg-accent/50",
-                leadingCellTypography(id),
-                leadingBodyClass(id)
-              )}
-            >
-              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-            </td>
-          );
-        }
+    return (
+      <tr
+        key={row.id}
+        data-today={isToday ? "true" : undefined}
+        aria-current={isToday ? "date" : undefined}
+        className={cn(isToday && TODAY_ROW_BG)}
+      >
+        {row.getVisibleCells().map((cell) => {
+          const id = cell.column.id;
 
-        if (id.startsWith("user-")) {
-          return (
-            <td
-              key={cell.id}
-              className={cn(
-                "min-h-40 whitespace-normal p-0 align-top text-sm transition-colors hover:bg-accent/50",
-                scrollBodyClass(id)
-              )}
-            >
-              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-            </td>
-          );
-        }
+          if (isLeadingColumn(id)) {
+            return (
+              <td
+                key={cell.id}
+                className={cn(
+                  "min-h-40 whitespace-nowrap px-1 py-2 align-middle transition-colors hover:bg-accent/50",
+                  leadingCellTypography(id),
+                  leadingBodyClass(id, isToday)
+                )}
+              >
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </td>
+            );
+          }
 
-        return null;
-      })}
-      {hasNoUsers && rowIndex === 0 ? (
-        <td
-          rowSpan={rows.length}
-          className="border-b border-r border-border bg-card px-6 align-middle text-center text-sm text-muted-foreground"
-        >
-          No user found
-        </td>
-      ) : null}
-      {showTotHoursColumn ? (
-        <DashboardTotHoursCell
-          hours={summaries.dailyTotalHoursByDay.get(row.original.dateNum) ?? 0}
-        />
-      ) : null}
-    </tr>
-  );
+          if (id.startsWith("user-")) {
+            return (
+              <td
+                key={cell.id}
+                className={cn(
+                  "min-h-40 whitespace-normal p-0 align-top text-sm transition-colors hover:bg-accent/50",
+                  scrollBodyClass(id, isToday)
+                )}
+              >
+                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+              </td>
+            );
+          }
+
+          return null;
+        })}
+        {hasNoUsers && rowIndex === 0 ? (
+          <td
+            rowSpan={rows.length}
+            className="border-b border-r border-border bg-card px-6 align-middle text-center text-sm text-muted-foreground"
+          >
+            No user found
+          </td>
+        ) : null}
+        {showTotHoursColumn ? (
+          <DashboardTotHoursCell
+            hours={summaries.dailyTotalHoursByDay.get(row.original.dateNum) ?? 0}
+            isToday={isToday}
+          />
+        ) : null}
+      </tr>
+    );
+  };
 
   return (
     <main className="border border-border bg-card shadow-lg backdrop-blur-sm">

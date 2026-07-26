@@ -1,0 +1,12 @@
+# Sudo — developers group (optional)
+# Install: sudo visudo -f /etc/sudoers.d/developers
+# Validate: sudo visudo -cf /etc/sudoers.d/developers
+
+Cmnd_Alias YOHTO_SERVICES = /usr/bin/systemctl restart yohto-api, \
+                            /usr/bin/systemctl restart yohto-client, \
+                            /usr/bin/systemctl status yohto-api, \
+                            /usr/bin/systemctl status yohto-client, \
+                            /usr/bin/systemctl status cloudflared-monthly
+
+# Allow developers to restart/status app services without full root
+%developers ALL=(ALL) NOPASSWD: YOHTO_SERVICES

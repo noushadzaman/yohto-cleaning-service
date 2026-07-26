@@ -32,6 +32,7 @@ import {
 import {
   maxRowSuffixForWeek,
   weeklyRowHasAnyData,
+  weeklyRowsHaveSavedData,
 } from "@/features/dashboard/weekly-row-utils";
 import { createBlankWeeklyRow } from "@/features/dashboard/weekly-showcase-rows";
 import {
@@ -149,6 +150,7 @@ export default function WeeklyShowcaseClient({
 
   const rows = localRows;
   const canManageWeeklyRows = Boolean(user?.isAdmin);
+  const hasSavedData = weeklyRowsHaveSavedData(rows, columnHeaders);
 
   const canAddRow =
     canManageWeeklyRows &&
@@ -447,6 +449,15 @@ export default function WeeklyShowcaseClient({
       logoAlt="Extra team"
     >
       <WeeklyWeekPagination year={year} weekNumber={weekNumber} />
+
+      {!hasSavedData && rows.length > 0 ? (
+        <p className="rounded-md border border-border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+          No saved entries for calendar week {weekNumber}, {year}
+          {weekRangeLabel ? ` (${weekRangeLabel})` : ""}. Use the week arrows above to
+          switch weeks, or{canManageWeeklyRows ? " click +" : " ask an admin to add data"} in a
+          cell below.
+        </p>
+      ) : null}
 
       {canManageWeeklyRows ? (
         <div className="flex flex-wrap items-center gap-3">

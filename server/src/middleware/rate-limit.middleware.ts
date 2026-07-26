@@ -22,7 +22,7 @@ export const authLimiter = rateLimit({
  */
 export const passwordResetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  limit: 5,
+  limit: process.env.NODE_ENV === 'production' ? 5 : 30,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: RATE_LIMIT_MESSAGE,

@@ -13,9 +13,23 @@ import {
 type MonthlyMonthPaginationProps = {
   year: number;
   monthNumber: number;
+  /** Defaults to main dashboard `/`. Use `/my-tasks` for the personal work page. */
+  basePath?: string;
 };
 
-export function MonthlyMonthPagination({ year, monthNumber }: MonthlyMonthPaginationProps) {
+function monthHref(basePath: string, ref: CalendarMonthRef): string {
+  if (basePath === "/" || basePath === "") {
+    return monthlyPagePath(ref);
+  }
+  const path = basePath.endsWith("/") ? basePath.slice(0, -1) : basePath;
+  return `${path}?year=${ref.year}&month=${ref.month}`;
+}
+
+export function MonthlyMonthPagination({
+  year,
+  monthNumber,
+  basePath = "/",
+}: MonthlyMonthPaginationProps) {
   const selected: CalendarMonthRef = { year, month: monthNumber };
   const current = getCurrentCalendarMonth();
   const isCurrentMonth = isSameCalendarMonth(selected, current);
@@ -34,7 +48,7 @@ export function MonthlyMonthPagination({ year, monthNumber }: MonthlyMonthPagina
         size="icon"
         className="shrink-0 rounded-full"
       >
-        <Link href={monthlyPagePath(prev)} prefetch aria-label="Previous month">
+        <Link href={monthHref(basePath, prev)} prefetch aria-label="Previous month">
           <ChevronLeft className="size-5" aria-hidden />
         </Link>
       </Button>
@@ -47,7 +61,7 @@ export function MonthlyMonthPagination({ year, monthNumber }: MonthlyMonthPagina
           </span>
         ) : (
           <Button asChild variant="outline" size="sm" className="mt-1 h-7 px-3 text-xs font-medium">
-            <Link href={monthlyPagePath(current)} prefetch>
+            <Link href={monthHref(basePath, current)} prefetch>
               Today
             </Link>
           </Button>
@@ -60,7 +74,7 @@ export function MonthlyMonthPagination({ year, monthNumber }: MonthlyMonthPagina
         size="icon"
         className="shrink-0 rounded-full"
       >
-        <Link href={monthlyPagePath(next)} prefetch aria-label="Next month">
+        <Link href={monthHref(basePath, next)} prefetch aria-label="Next month">
           <ChevronRight className="size-5" aria-hidden />
         </Link>
       </Button>

@@ -1,0 +1,17 @@
+[Unit]
+Description=Yohto Next.js Client
+After=network.target yohto-api.service
+Requires=yohto-api.service
+
+[Service]
+Type=simple
+User=zaman
+WorkingDirectory=/home/zaman/yohto-cleaning-service/client
+ExecStart=/home/zaman/yohto-cleaning-service/client/start-client.sh
+Restart=on-failure
+RestartSec=10
+Environment=NODE_ENV=production
+EnvironmentFile=-/home/zaman/yohto-cleaning-service/client/.env.local
+
+[Install]
+WantedBy=multi-user.target

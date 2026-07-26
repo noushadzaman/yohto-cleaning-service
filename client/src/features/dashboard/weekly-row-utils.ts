@@ -20,6 +20,14 @@ export function weeklyRowHasAnyData(
   return false;
 }
 
+/** True if any row in the list has saved cell content. */
+export function weeklyRowsHaveSavedData(
+  rows: WeeklyShowcaseRow[],
+  columnHeaders?: WeeklyShowcaseColumnHeader[]
+): boolean {
+  return rows.some((row) => weeklyRowHasAnyData(row, columnHeaders));
+}
+
 /** Largest numeric row suffix for ids like `2026-w18-3` for this year/week; 0 if none match. */
 export function maxRowSuffixForWeek(
   rows: WeeklyShowcaseRow[],
